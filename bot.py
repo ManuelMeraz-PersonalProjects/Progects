@@ -13,20 +13,22 @@ NOTIFY_FILE = 'notifications.txt'
 class Bot():
 
     # List of words the bot will reply to
-    comment_words = ['!register', '!notify']
+    comment_words = ['register', 'notify']
     registration_reply = 'Thank you for registering'
 
     # Subreddits to search for
-    subreddits = ['progects', 'test']
+    #subreddits = ['progects', 'test']
+    subreddit_list = ['progects', 'test']
 
-     # This is used in the runbot function to meet the criteria for
-     # searching multiple subreddits, or a single subreddit
-    subredditstring = ''
+    # This is used in the runbot function to meet the criteria for
+    # searching multiple subreddits, or a single subreddit
+    #subredditstring = ''
 
     def __init__(self, config=CONFIG):
         '''
-        Logs the bot into Reddit.
+        Handle various setup functions, including logging into Reddit.
         '''
+        
         # set containing all comments seen so far
         self.comment_cache = self.cache_create()
 
@@ -47,6 +49,12 @@ class Bot():
             self.bot_name = contents[0]
             self.password = contents[1]
 
+        # create PRAW subreddit objects
+        # did some testing, this only needs to be done once,
+        # that's why its in __init__ now
+        self.subreddits = self.get_subreddits()
+
+        # login
         print("Logging in...")
         self.r.login(self.bot_name, self.password)
 
@@ -127,55 +135,84 @@ class Bot():
         # like: if comment contains keyword, call the function for that keyword
         # register, notify, etc. each containing their own response
 
-        self.comments = self.subreddit.get_comments(limit=25)
+        # broke this up to handle each subreddit seperately
+        for subreddit in self.subreddits:
 
-        # Search through comments, if a match is found reply
-        # unless the user has already replied or if the comment
-        # is by the user.
+            self.comments = subreddit.get_comments(limit=25)
 
-        print("Reading comments...")
-        for comment in self.comments:
+            # Search through comments, if a match is found reply
+            # unless the user has already replied or if the comment
+            # is by the user.
 
-            # Removes any extraneous characters
-            comment_text = comment.body.lower().split(' ')
-            comment_text = [x.strip('?!@#$%^&*"') for x in comment_text]
+            print("Reading comments...")
+            for comment in self.comments:
 
-            for commentWord in comment_text:
-                
-                for word in word_list:
+                # Removes any extraneous characters
+                comment_text = comment.body.lower().split(' ')
+                comment_text = [x.strip('?!@#$%^&*"') for x in comment_text]
 
-                    #
-                    author = str(comment.author).lower()
-                    self.bot_name =  self.bot_name.lower()
+                #print(comment_text)
+
+                for commentWord in comment_text:
                     
-                    if word == commentWord and comment.id not in \
-                        self.comment_cache and author != self.bot_name:
-                            
-                        print("Comment found, ID: " + comment.id)
-                        print ('Replying...')
-                        #comment.reply(reply_with) # got yelled at for spamming
-                        print ('Writing Comment ID to Cache')
+                    for word in word_list:
 
-                        # add comment id to cache and cache file simultaneously
-                        self.comment_cache.add(comment.id)
+                        #
+                        author = str(comment.author).lower()
+                        self.bot_name =  self.bot_name.lower()
 
-                        # Updates cache file with new comment ID
-                        print ('Updating cache file...')
+                        # here we should probably avoid passing in the variables
+                        # word_list and reply_with, instead just checking
+                        # against self.whatever, since we are not changing them
+                        # or returning anything
+
+                        # instead, just check for a match and decide what
+                        # function to call to handle it
                         
-                        with open(COMMENT_ID_FILE, 'w+') as f:
-                            
-                            for item in self.comment_cache:
+                        if word == commentWord and comment.id not in \
+                            self.comment_cache and author != self.bot_name:
                                 
-                                f.write(item + '\n')
+                            print("Comment found, ID: " + comment.id)
+                            print ('Replying...')
+                            #comment.reply(reply_with)
+                            # I disabled for my testing, cuz i an exception thrown for spamming
+                            print ('Writing Comment ID to Cache')
 
-                        print ('Cache Updated')
+                            # add comment id to cache and cache file simultaneously
+                            self.comment_cache.add(comment.id)
 
+                            # Updates cache file with new comment ID
+                            print ('Updating cache file...')
+                            
+                            with open(COMMENT_ID_FILE, 'w+') as f:
+                                
+                                for item in self.comment_cache:
+                                    
+                                    f.write(item + '\n')
+
+                            print ('Cache Updated')
+
+
+    def get_subreddits(self):
+        '''
+        For each specified subreddit, use get_subreddit to create a
+        subreddit object for it and store them in a list.
+        '''
+
+        subreddits = []
+
+        for sub in self.subreddit_list:
+
+            subreddits.append(self.r.get_subreddit(sub))
+
+        return subreddits
+        
 
     def runbot(self):
         '''
         Function to run bot.
         '''
-
+        """
         # Creates temp cache storage
         #self.cache_create() <- this is an __init__ thing, should only need
         # to run once at bot startup
@@ -186,10 +223,18 @@ class Bot():
         for subreddit in self.subreddits:
             self.subredditstring += subreddit + '+'
 
-        self.subredditstring.rstrip('+')
+        print(self.subreddits)
+
+        #self.subredditstring.rstrip('+')
 
         self.subreddit = self.r.get_subreddit(self.subredditstring)
 
+        print("subreddit string: %r" % self.subredditstring)
+        print(self.subredditstring)
+
+        print("\nsubreddit: %r" % self.subreddit)
+        print(self.subreddit)
+        """
         # Searches comments
         self.comment_search(self.comment_words, self.registration_reply)
 
