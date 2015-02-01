@@ -21,21 +21,23 @@ class Bot():
         # List of words bot looks for and their associated commands
         self.comment_words = {'!register':self.register, '!notify':self.notify}
         
-        #self.registration_reply = 'Thank you for registering'
-
         # Subreddits to search for
-        #subreddits = ['progects', 'test']
         self.subreddit_list = ['progects', 'test']
         
         # set containing all comments seen so far
-        self.comment_cache = self.cache_create()
+        self.comment_cache = self.cache_create(COMMENT_ID_FILE)
 
         print(self.comment_cache)
 
         # set containing current list of users signed up for notifications
-        self.notify_cache = self.notify_create()
+        self.notify_cache = self.cache_create(NOTIFY_FILE)
 
         print(self.notify_cache)
+        
+        # dictionary containing all registered users and teams
+        self.registry_cache = self.cache_create(REGISTRY)
+        
+        print (self.registry_cache)
 
         self.r = praw.Reddit(user_agent = "Test bot for /r/progects by /u/NEET_Here and /u/triple-take")
 
@@ -59,39 +61,44 @@ class Bot():
         print("Successfull login...")
 
 
-    def cache_create(self):
+    def cache_create(self, filename):
         '''
         Pulls information from file and creates cache
         '''
-        comment_cache = set()
         
-        with open(COMMENT_ID_FILE, 'r') as f:
+        # Checks if dictionary cache will be created
+        if filename == REGISTRY:
+            
+            cache = {}
+            
+            with open(filename, 'r') as f:
+                
+                # separates the lines in file
+                for item in f.read().splitlines():
+                    
+                    # Creates 2 variables with the key and value
+                    (key, value) = item.rstrip().split(None, 1)
+                    
+                    # Splits the value string into a list
+                    value = value.split(' ')
+                    
+                    cache[key] = value
+         
+         # else it creates normal cache set   
+        else:
+                
+            cache = set()
+            
+            with open(filename, 'r') as f:
 
-            # drop trailing newlines
-            cache_read = [line.rstrip() for line in f.readlines()]
+                # drop trailing newlines
+                cache_read = [line.rstrip() for line in f.readlines()]
 
-            # add them to set (this also handles duplicate entries if they occur)
-            (comment_cache.add(comment) for comment in cache_read)
+                # add them to set (this also handles duplicate entries if they occur)
+                (cache.add(comment) for comment in cache_read)
 
-        return comment_cache
+        return cache
 
-
-    def notify_create(self):
-        '''
-        Pulls list of user IDs who are signed up for notifications and creates
-        a cache of them.
-        '''
-        notify_cache = set()
-
-        with open(NOTIFY_FILE, 'r') as f:
-
-            # drop trailing newlines
-            notify_read = [line.rstrip() for line in f.readlines()]
-
-            # add them to set (this also handles duplicate entries if they occur)
-            (notify_cache.add(user) for user in notify_read)
-
-        return notify_cache
 
 
 
@@ -122,7 +129,7 @@ class Bot():
 
         comment_list = subreddit.get_comments(limit=25)
 
-        print("Reading comments...")
+        print("Reading comments in subreddit {0}...".format(subreddit))
         for comment in comment_list:
 
             # should keep capitalization
@@ -142,11 +149,12 @@ class Bot():
                         # idk how reply works yet
                         self.comment_words[keyword](author)
 
-                        # add comment to seen list
+                        # Update cache files
                         self.comment_cache.add(comment.id)
+                        self.notify_cache.add(author)
 
                         # update comment cache file
-                        self.write_file(COMMENT_ID_FILE, comment_cache)
+                        self.write_file(COMMENT_ID_FILE, self.comment_cache)
             
 
     def write_file(self, filename, cache):
@@ -155,10 +163,15 @@ class Bot():
         print('Writing data to {0}'.format(filename))
 
         with open(filename, 'w+') as f:
-                                
-            for item in cache:
-                                    
-                f.write(item + '\n')
+            if type(cache) == dict:
+                for key in cache:
+                    f.write(key + ' ',)
+                    for value in cache[key]:
+                        f.write(value + ' ')
+                    f.write('\n')
+            else:
+                for item in cache:                   
+                    f.write(item + '\n')
 
         print('The file {0} has been updated'.format(filename))
 
