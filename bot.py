@@ -4,11 +4,10 @@ import time
 # configuration file. store name and password here
 CONFIG = 'config.txt'
 
-class Bot():
+# file containing all seen comments to date
+COMMENT_ID_FILE = 'commentIDcache.txt'
 
-    # Cache storage
-    cache = []
-    cache_file = 'commentIDcache.txt'
+class Bot():
 
     # List of words the bot will reply to
     comment_words = ['register']
@@ -25,6 +24,10 @@ class Bot():
         '''
         Logs the bot into Reddit.
         '''
+        # set containing all comments seen so far
+        self.comment_cache = self.cache_create()
+
+        print(self.comment_cache)
 
         self.r = praw.Reddit(user_agent = "Test bot for /r/progects by /u/NEET_Here and /u/triple-take")
 
@@ -46,9 +49,17 @@ class Bot():
         '''
         Pulls information from file and creates cache
         '''
-        with open(self.cache_file, 'r') as f:
-            self.cache = f.read().split('\n')
-            self.cache = [x for x in self.cache if x != '']
+        comment_cache = set()
+        
+        with open(COMMENT_ID_FILE, 'r') as f:
+
+            # drop trailing newlines
+            cache_read = [line.rstrip() for line in f.readlines()]
+
+            # add them to set (this also handles duplicate entries if they occur)
+            [comment_cache.add(comment) for comment in cache_read]
+
+        return comment_cache
 
 
     def comment_search(self, word_list, reply_with):
@@ -76,20 +87,25 @@ class Bot():
                     #
                     author = str(comment.author).lower()
                     self.bot_name =  self.bot_name.lower()
-                    if word == commentWord and comment.id not in self.cache\
-                     and author != self.bot_name:
+                    
+                    if word == commentWord and comment.id not in \
+                        self.comment_cache and author != self.bot_name:
+                            
                         print("Comment found, ID: " + comment.id)
                         print ('Replying...')
-                        comment.reply(reply_with)
+                        #comment.reply(reply_with) # got yelled at for spamming
                         print ('Writing Comment ID to Cache')
 
                         # add comment id to cache and cache file simultaneously
-                        self.cache.append(comment.id)
+                        self.comment_cache.add(comment.id)
 
                         # Updates cache file with new comment ID
                         print ('Updating cache file...')
-                        with open(self.cache_file, 'w+') as f:
-                            for item in self.cache:
+                        
+                        with open(COMMENT_ID_FILE, 'w+') as f:
+                            
+                            for item in self.comment_cache:
+                                
                                 f.write(item + '\n')
 
                         print ('Cache Updated')
@@ -130,7 +146,6 @@ def main():
         print ('Iteration: {0}'.format(i))
         bot.runbot()
         i += 1
-
 
 
 if __name__ == '__main__':
