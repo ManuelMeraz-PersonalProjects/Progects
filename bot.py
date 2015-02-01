@@ -38,7 +38,7 @@ class Bot():
 
         print(self.notify_cache)
 
-        self.r = praw.Reddit(user_agent = "Test bot for /r/progects by /u/NEET_Here and /u/triple-take")
+        self.r = praw.Reddit(user_agent = "Test bot for /r/progects by /u/NEET_Here, /u/triple-take and /u/prog_quest")
 
         # read in username and password from external config file
         with open(CONFIG, 'r') as txt:
