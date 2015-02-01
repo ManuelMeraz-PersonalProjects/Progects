@@ -72,7 +72,7 @@ class Bot():
             cache_read = [line.rstrip() for line in f.readlines()]
 
             # add them to set (this also handles duplicate entries if they occur)
-            [comment_cache.add(comment) for comment in cache_read]
+            (comment_cache.add(comment) for comment in cache_read)
 
         return comment_cache
 
@@ -90,7 +90,7 @@ class Bot():
             notify_read = [line.rstrip() for line in f.readlines()]
 
             # add them to set (this also handles duplicate entries if they occur)
-            [notify_cache.add(user) for user in notify_read]
+            (notify_cache.add(user) for user in notify_read)
 
         return notify_cache
 
@@ -163,7 +163,7 @@ class Bot():
 
     def cache_write(self):
 
-        print ('Writing Comment ID to Cache')
+        print('Writing Comment ID to Cache')
 
         with open(COMMENT_ID_FILE, 'w+') as f:
                                 
@@ -171,7 +171,7 @@ class Bot():
                                     
                 f.write(item + '\n')
 
-        print ('Cache Updated')
+        print('Cache Updated')
 
                         
     def register(self, user):
