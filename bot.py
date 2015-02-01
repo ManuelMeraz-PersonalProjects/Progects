@@ -9,6 +9,9 @@ COMMENT_ID_FILE = 'commentIDcache.txt'
 # file containing the user ID's on the notification list
 NOTIFY_FILE = 'notifications.txt'
 
+# file containing event teams
+REGISTRY = 'registry.txt'
+
 class Bot():
 
     def __init__(self):
@@ -23,10 +26,6 @@ class Bot():
         # Subreddits to search for
         #subreddits = ['progects', 'test']
         self.subreddit_list = ['progects', 'test']
-
-        # This is used in the runbot function to meet the criteria for
-        # searching multiple subreddits, or a single subreddit
-        #subredditstring = ''
         
         # set containing all comments seen so far
         self.comment_cache = self.cache_create()
@@ -95,15 +94,6 @@ class Bot():
         return notify_cache
 
 
-    def notify_add(self, user):
-        '''
-        Add a user ID to the notify list cache.
-        '''
-
-        # because sets do not allow duplicates, we don't need to check if user
-        # is already on the notify list or not, just add them
-        self.notify_cache.add(user)
-
 
     def notify_remove(self, user):
         '''
@@ -130,8 +120,6 @@ class Bot():
         function if a match is found.
         '''
 
-        # this doesn't need to be 'self.comments' as it isn't used outside of
-        # this method
         comment_list = subreddit.get_comments(limit=25)
 
         print("Reading comments...")
@@ -158,20 +146,21 @@ class Bot():
                         self.comment_cache.add(comment.id)
 
                         # update comment cache file
-                        self.cache_write()
+                        self.write_file(COMMENT_ID_FILE, comment_cache)
             
 
-    def cache_write(self):
+    def write_file(self, filename, cache):
+        ''' Function to write cache data to a file'''
 
-        print('Writing Comment ID to Cache')
+        print('Writing data to {0}'.format(filename))
 
-        with open(COMMENT_ID_FILE, 'w+') as f:
+        with open(filename, 'w+') as f:
                                 
-            for item in self.comment_cache:
+            for item in cache:
                                     
                 f.write(item + '\n')
 
-        print('Cache Updated')
+        print('The file {0} has been updated'.format(filename))
 
                         
     def register(self, user):
