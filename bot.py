@@ -1,5 +1,4 @@
-import praw
-import time
+import praw, time
 
 # configuration file. store name and password here
 CONFIG = 'config.txt'
@@ -12,22 +11,22 @@ NOTIFY_FILE = 'notifications.txt'
 
 class Bot():
 
-    # List of words the bot will reply to
-    comment_words = ['register', 'notify']
-    registration_reply = 'Thank you for registering'
-
-    # Subreddits to search for
-    #subreddits = ['progects', 'test']
-    subreddit_list = ['progects', 'test']
-
-    # This is used in the runbot function to meet the criteria for
-    # searching multiple subreddits, or a single subreddit
-    #subredditstring = ''
-
-    def __init__(self, config=CONFIG):
+    def __init__(self):
         '''
         Handle various setup functions, including logging into Reddit.
         '''
+        # List of words bot looks for and their associated commands
+        self.comment_words = {'!register':self.register, '!notify':self.notify}
+        
+        #self.registration_reply = 'Thank you for registering'
+
+        # Subreddits to search for
+        #subreddits = ['progects', 'test']
+        self.subreddit_list = ['progects', 'test']
+
+        # This is used in the runbot function to meet the criteria for
+        # searching multiple subreddits, or a single subreddit
+        #subredditstring = ''
         
         # set containing all comments seen so far
         self.comment_cache = self.cache_create()
@@ -42,7 +41,7 @@ class Bot():
         self.r = praw.Reddit(user_agent = "Test bot for /r/progects by /u/NEET_Here and /u/triple-take")
 
         # read in username and password from external config file
-        with open(config, 'r') as txt:
+        with open(CONFIG, 'r') as txt:
 
             contents = [line.strip('\n') for line in txt.readlines()]
 
@@ -122,82 +121,100 @@ class Bot():
 
             print("User not on notify list. Nothing happened")
 
-            # or, post a response
+            # or, post a response or something
 
 
-    def comment_search(self, word_list, reply_with):
+    def comment_search(self, subreddit):
         '''
-        Searches for comments in the comment_words list and replies
-        to them. Reply with is the response string.
+        Searches for keywords in comments and responds with the appropriate
+        function if a match is found.
         '''
 
-        # this function needs a total rewrite to handle each keyword differently
-        # like: if comment contains keyword, call the function for that keyword
-        # register, notify, etc. each containing their own response
+        # this doesn't need to be 'self.comments' as it isn't used outside of
+        # this method
+        comment_list = subreddit.get_comments(limit=25)
 
-        # broke this up to handle each subreddit seperately
-        for subreddit in self.subreddits:
+        print("Reading comments...")
+        for comment in comment_list:
 
-            self.comments = subreddit.get_comments(limit=25)
+            # should keep capitalization
+            author = str(comment.author)
 
-            # Search through comments, if a match is found reply
-            # unless the user has already replied or if the comment
-            # is by the user.
+            if comment.id not in self.comment_cache and \
+                author.lower() != self.bot_name.lower():
 
-            print("Reading comments...")
-            for comment in self.comments:
+                comment_text = comment.body.lower().split()
 
-                # Removes any extraneous characters
-                comment_text = comment.body.lower().split(' ')
-                comment_text = [x.strip('?!@#$%^&*"') for x in comment_text]
+                # if comment contains a keyword, call the corresponding function
+                for keyword in self.comment_words:
 
-                #print(comment_text)
+                    if keyword in comment_text:
 
-                for commentWord in comment_text:
-                    
-                    for word in word_list:
+                        # the comment might need to be passed as an arg too, 
+                        # idk how reply works yet
+                        self.comment_words[keyword](author)
 
-                        #
-                        author = str(comment.author).lower()
-                        self.bot_name =  self.bot_name.lower()
+                        # add comment to seen list
+                        self.comment_cache.add(comment.id)
 
-                        # here we should probably avoid passing in the variables
-                        # word_list and reply_with, instead just checking
-                        # against self.whatever, since we are not changing them
-                        # or returning anything
+                        # update comment cache file
+                        self.cache_write()
+            
 
-                        # instead, just check for a match and decide what
-                        # function to call to handle it
-                        
-                        if word == commentWord and comment.id not in \
-                            self.comment_cache and author != self.bot_name:
+    def cache_write(self):
+
+        print ('Writing Comment ID to Cache')
+
+        with open(COMMENT_ID_FILE, 'w+') as f:
                                 
-                            print("Comment found, ID: " + comment.id)
-                            print ('Replying...')
-                            #comment.reply(reply_with)
-                            # I disabled for my testing, cuz i an exception thrown for spamming
-                            print ('Writing Comment ID to Cache')
-
-                            # add comment id to cache and cache file simultaneously
-                            self.comment_cache.add(comment.id)
-
-                            # Updates cache file with new comment ID
-                            print ('Updating cache file...')
-                            
-                            with open(COMMENT_ID_FILE, 'w+') as f:
-                                
-                                for item in self.comment_cache:
+            for item in self.comment_cache:
                                     
-                                    f.write(item + '\n')
+                f.write(item + '\n')
 
-                            print ('Cache Updated')
+        print ('Cache Updated')
 
+                        
+    def register(self, user):
+        '''
+        Placeholder function to register a user.
+        '''
+
+        print("I just registered %s! (obviously just a test)" % user)
+
+
+    def notify(self, user):
+        '''
+        Placeholder function to add someone to the notification list or
+        whatever. Maybe merge it with notify_add()/notify_remove()? That is,
+        if we pass it some kind of 'add' or 'remove' argument.
+        '''
+
+        print("Added %s to the notification list! (obviously just a test)" % \
+            user)
+
+        self.notify_add(user)
+
+        print(self.notify_cache)
+
+        print("Let %s know they've been added to the list!" % user)
+
+        # add code here to call reply_to with some kind of response
+
+    def reply_to(self, user, message):
+        '''
+        Placeholder function to reply to a user's post. The functions
+        register(), notify(), etc. should call this upon completion.
+        '''
+
+        pass
 
     def get_subreddits(self):
         '''
         For each specified subreddit, use get_subreddit to create a
         subreddit object for it and store them in a list.
         '''
+
+        print("Grabbing subreddits...")
 
         subreddits = []
 
@@ -212,44 +229,27 @@ class Bot():
         '''
         Function to run bot.
         '''
-        """
-        # Creates temp cache storage
-        #self.cache_create() <- this is an __init__ thing, should only need
-        # to run once at bot startup
 
-        # Subreddits to be checked
-        print("Grabbing subreddits...")
-
+        # Search each subreddit for comments
         for subreddit in self.subreddits:
-            self.subredditstring += subreddit + '+'
-
-        print(self.subreddits)
-
-        #self.subredditstring.rstrip('+')
-
-        self.subreddit = self.r.get_subreddit(self.subredditstring)
-
-        print("subreddit string: %r" % self.subredditstring)
-        print(self.subredditstring)
-
-        print("\nsubreddit: %r" % self.subreddit)
-        print(self.subreddit)
-        """
-        # Searches comments
-        self.comment_search(self.comment_words, self.registration_reply)
+            
+            self.comment_search(subreddit)
 
         # Used to stop bot for certain amount of time to not
         # overload the server
         time.sleep(30)
 
+
 def main():
 
-    bot = Bot(CONFIG)
+    bot = Bot()
 
     i = 1
     while True:
-        print ('Iteration: {0}'.format(i))
+        
+        print ('Iteration: %d' % i)
         bot.runbot()
+        
         i += 1
 
 
