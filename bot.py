@@ -1,5 +1,4 @@
 import praw, time
-from pprint import pprint
 
 # configuration file. store name and password here
 CONFIG = 'config.txt'
@@ -28,7 +27,6 @@ class Bot():
         
         # set containing all comments seen so far
         self.comment_cache = self.cache_create(COMMENT_ID_FILE)
-
 
         # set containing current list of users signed up for notifications
         self.notify_cache = self.cache_create(NOTIFY_FILE)
@@ -71,17 +69,20 @@ class Bot():
             cache = {}
             
             with open(filename, 'r') as f:
+                try:
                 
-                # separates the lines in file
-                for item in f.read().splitlines():
-                    
-                    # Creates 2 variables with the key and value
-                    (key, value) = item.rstrip().split(None, 1)
-                    
-                    # Splits the value string into a list
-                    value = value.split(' ')
-                    
-                    cache[key] = value
+                    # separates the lines in file
+                    for item in f.read().splitlines():
+                        
+                        # Creates 2 variables with the key and value
+                        (key, value) = item.rstrip().split(None, 1)
+                        
+                        # Splits the value string into a list
+                        value = value.split(' ')
+                        
+                        cache[key] = value
+                except ValueError:
+                    print ('Registry empty')
          
          # else it creates normal cache set   
         else:
@@ -94,7 +95,7 @@ class Bot():
                 cache_read = [line.rstrip() for line in f.readlines()]
 
                 # add them to set (this also handles duplicate entries if they occur)
-                (cache.add(comment) for comment in cache_read)
+                [cache.add(comment) for comment in cache_read]
 
         return cache
 
@@ -132,8 +133,7 @@ class Bot():
             for command in self.commands:
                 if command in msg_text:
                     self.commands[command](user, msg_text, msg)
-                    
-                    self.notify_cache.add(user)
+                    msg.mark_as_read()
                 
             
         
@@ -169,7 +169,6 @@ class Bot():
 
                         # Update cache files
                         self.comment_cache.add(comment.id)
-                        self.notify_cache.add(user)
 
                         # update comment cache file
                         self.write_file(COMMENT_ID_FILE, self.comment_cache)
@@ -213,28 +212,33 @@ class Bot():
                 experience = exp
                 
         if (language and experience) != False:
-            print ('Replying to message...')
-            message.reply('Thank you for registering')
+            print ('Replying to good command...')
+            #message.reply('Thank you for registering')
+            print ('Adding user to registry...')
+            self.registry_cache[user] = [language, experience]
+            self.write_file(REGISTRY, self.registry_cache)
+            self.notify(user)
 
         else:
-            print ('Replying to message...')
-            message.reply('Sorry try adding your language and'
-                            ' experience to your command please')
+            print ('Replying to bad command...')
+            #message.reply('Sorry try adding your language and'
+             #               ' experience to your command please')
         
         
 
 
-    def notify(self, user, message):
+    def notify(self, user):
         '''
         Placeholder function to add someone to the notification list or
         whatever. Maybe merge it with notify_add()/notify_remove()? That is,
         if we pass it some kind of 'add' or 'remove' argument.
         '''
 
-        print("Added %s to the notification list! (obviously just a test)" % \
+        print("Added %s to the notification list!" % \
             user)
 
         self.notify_add(user)
+        self.write_file(NOTIFY_FILE, self.notify_cache)
 
         print(self.notify_cache)
 
