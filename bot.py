@@ -163,9 +163,9 @@ class Bot():
 
                     if command in comment_text:
 
-                        # the comment might need to be passed as an arg too, 
-                        # idk how reply works yet
+                        # Executes command
                         self.commands[command](user, comment_text, comment)
+                        
 
                         # Update cache files
                         self.comment_cache.add(comment.id)
@@ -222,7 +222,7 @@ class Bot():
         else:
             print ('Replying to bad command...')
             #message.reply('Sorry try adding your language and'
-             #               ' experience to your command please')
+            #               ' experience to your command please')
         
         
 
@@ -237,7 +237,7 @@ class Bot():
         print("Added %s to the notification list!" % \
             user)
 
-        self.notify_add(user)
+        self.notify_cache.add(user)
         self.write_file(NOTIFY_FILE, self.notify_cache)
 
         print(self.notify_cache)
