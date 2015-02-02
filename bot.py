@@ -59,6 +59,8 @@ class Bot():
         self.r.login(self.bot_name, self.password)
 
         print("Successfull login...")
+    
+
 
 
     def cache_create(self, filename):
@@ -176,15 +178,19 @@ class Bot():
         print('The file {0} has been updated'.format(filename))
 
                         
-    def register(self, user):
+    def register(self):
         '''
         Placeholder function to register a user.
         '''
 
+        
         print("I just registered %s! (obviously just a test)" % user)
+        
+        
+        
 
 
-    def notify(self, user):
+    def notify(self, user, message):
         '''
         Placeholder function to add someone to the notification list or
         whatever. Maybe merge it with notify_add()/notify_remove()? That is,
@@ -199,16 +205,10 @@ class Bot():
         print(self.notify_cache)
 
         print("Let %s know they've been added to the list!" % user)
+        
+        
 
-        # add code here to call reply_to with some kind of response
 
-    def reply_to(self, user, message):
-        '''
-        Placeholder function to reply to a user's post. The functions
-        register(), notify(), etc. should call this upon completion.
-        '''
-
-        pass
 
     def get_subreddits(self):
         '''
