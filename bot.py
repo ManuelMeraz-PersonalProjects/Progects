@@ -1,4 +1,5 @@
 import praw, time
+from pprint import pprint
 
 # configuration file. store name and password here
 CONFIG = 'config.txt'
@@ -19,25 +20,21 @@ class Bot():
         Handle various setup functions, including logging into Reddit.
         '''
         # List of words bot looks for and their associated commands
-        self.comment_words = {'!register':self.register, '!notify':self.notify}
-        
+        self.commands = {'!register':self.register, '!notify':self.notify}
+        self.languages = ('python', 'c++', 'java', 'javascript', 'ruby')
+        self.experience = ('beginner', 'intermediate', 'advanced')
         # Subreddits to search for
         self.subreddit_list = ['progects', 'test']
         
         # set containing all comments seen so far
         self.comment_cache = self.cache_create(COMMENT_ID_FILE)
 
-        print(self.comment_cache)
 
         # set containing current list of users signed up for notifications
         self.notify_cache = self.cache_create(NOTIFY_FILE)
-
-        print(self.notify_cache)
         
         # dictionary containing all registered users and teams
         self.registry_cache = self.cache_create(REGISTRY)
-        
-        print (self.registry_cache)
 
         self.r = praw.Reddit(user_agent = "Test bot for /r/progects by /u/NEET_Here and /u/triple-take")
 
@@ -121,6 +118,25 @@ class Bot():
             print("User not on notify list. Nothing happened")
 
             # or, post a response or something
+            
+    def message_search(self):
+        '''
+        Searches for keywords in private messages and respods with
+        appropriate function if a match is found.
+        '''
+        print ('Reading unread messages...')
+        message = self.r.get_unread(limit=25)
+        for msg in message:
+            msg_text = (str(msg).replace('\n', ' ').lower().split(' '))
+            user = str(msg.author)
+            for command in self.commands:
+                if command in msg_text:
+                    self.commands[command](user, msg_text, msg)
+                    
+                    self.notify_cache.add(user)
+                
+            
+        
 
 
     def comment_search(self, subreddit):
@@ -135,25 +151,25 @@ class Bot():
         for comment in comment_list:
 
             # should keep capitalization
-            author = str(comment.author)
+            user = str(comment.author)
 
             if comment.id not in self.comment_cache and \
-                author.lower() != self.bot_name.lower():
+                user.lower() != self.bot_name.lower():
 
                 comment_text = comment.body.lower().split()
 
                 # if comment contains a keyword, call the corresponding function
-                for keyword in self.comment_words:
+                for command in self.commands:
 
-                    if keyword in comment_text:
+                    if command in comment_text:
 
                         # the comment might need to be passed as an arg too, 
                         # idk how reply works yet
-                        self.comment_words[keyword](author)
+                        self.commands[command](user, comment_text, comment)
 
                         # Update cache files
                         self.comment_cache.add(comment.id)
-                        self.notify_cache.add(author)
+                        self.notify_cache.add(user)
 
                         # update comment cache file
                         self.write_file(COMMENT_ID_FILE, self.comment_cache)
@@ -178,14 +194,32 @@ class Bot():
         print('The file {0} has been updated'.format(filename))
 
                         
-    def register(self):
+    def register(self, user, message_text, message):
         '''
-        Placeholder function to register a user.
+        The registration command will register a user for events. 
+        Message is the text for the message that the user is registering
+        with.
         '''
+        language = False
+        experience =  False
+        
+        
+        for lang in self.languages:
+            if lang in message_text:
+                language = lang
+                
+        for exp in self.experience:
+            if exp in message_text:
+                experience = exp
+                
+        if (language and experience) != False:
+            print ('Replying to message...')
+            message.reply('Thank you for registering')
 
-        
-        print("I just registered %s! (obviously just a test)" % user)
-        
+        else:
+            print ('Replying to message...')
+            message.reply('Sorry try adding your language and'
+                            ' experience to your command please')
         
         
 
@@ -236,10 +270,12 @@ class Bot():
         for subreddit in self.subreddits:
             
             self.comment_search(subreddit)
+        
+        self.message_search()
 
         # Used to stop bot for certain amount of time to not
         # overload the server
-        time.sleep(30)
+        time.sleep(5)
 
 
 def main():
