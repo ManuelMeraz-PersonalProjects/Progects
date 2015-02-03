@@ -19,7 +19,7 @@ class Bot():
         Handle various setup functions, including logging into Reddit.
         '''
         # List of words bot looks for and their associated commands
-        self.commands = {'!register':self.register, '!notify':self.notify}
+        self.commands = {'!register':self.register, '!unregister':self.unregister}
         self.languages = ('python', 'c++', 'java', 'javascript', 'ruby')
         self.experience = ('beginner', 'intermediate', 'advanced')
         # Subreddits to search for
@@ -102,23 +102,44 @@ class Bot():
 
 
 
-    def notify_remove(self, user):
+    def unregister(self, user, message_text, message):
         '''
         Try to remove a user ID from the notify list. If the ID isn't found,
         raise an exception, but don't do anything because it's not a big deal.
         '''
-
+        notify_remove = False
+        register_remove = False
+        
         try:
             
             self.notify_cache.remove(user)
-
-            # here is where we would have code to respond with a confirmation
-
+            self.write_file(NOTIFY_FILE, self.notify_cache)
+            notify_remove =  True
+            
         except KeyError:
 
-            print("User not on notify list. Nothing happened")
+            print("User not on notify list")
 
-            # or, post a response or something
+            
+        try:
+            del self.registry_cache[user]            
+            self.write_file(REGISTRY, self.registry_cache)
+            register_remove = True
+            
+        except KeyError:
+
+            print("User not on registry.")
+            
+        if notify_remove == True and register_remove == True:
+            print ('Removing user from registry and notifications...')
+            message.reply('You have been removed from the event and '
+                            'notifications list.')
+        elif notify_remove == True and register_remove == False:
+            print ('Removing user from notifications...')
+            message.reply('You have been removed from the notifications list.')
+        else:
+            print ('Replying to unregistered user...')
+            message.reply('It looks like you aren\'t registered.')
             
     def message_search(self):
         '''
@@ -213,7 +234,7 @@ class Bot():
                 
         if (language and experience) != False:
             print ('Replying to good command...')
-            #message.reply('Thank you for registering')
+            message.reply('Thank you for registering')
             print ('Adding user to registry...')
             self.registry_cache[user] = [language, experience]
             self.write_file(REGISTRY, self.registry_cache)
@@ -221,8 +242,8 @@ class Bot():
 
         else:
             print ('Replying to bad command...')
-            #message.reply('Sorry try adding your language and'
-            #               ' experience to your command please')
+            message.reply('Sorry try adding your language and'
+                          ' experience to your command please')
         
         
 
@@ -234,15 +255,13 @@ class Bot():
         if we pass it some kind of 'add' or 'remove' argument.
         '''
 
-        print("Added %s to the notification list!" % \
-            user)
+        print("Adding {0} to notifications list.".format(user))
 
         self.notify_cache.add(user)
         self.write_file(NOTIFY_FILE, self.notify_cache)
 
-        print(self.notify_cache)
 
-        print("Let %s know they've been added to the list!" % user)
+        print('{0} added to notifications list.'.format(user))
         
         
 
