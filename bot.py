@@ -22,7 +22,6 @@ class Bot():
         self.commands = {'!register':self.register, '!unregister':self.unregister}
         self.languages = ('python', 'c++', 'java', 'javascript', 'ruby')
         self.experience = ('beginner', 'intermediate', 'advanced')
-        self.same_team = ('same', 'team')
         # Subreddits to search for
         self.subreddit_list = ['progects', 'test']
         
