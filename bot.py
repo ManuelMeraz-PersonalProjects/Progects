@@ -304,6 +304,8 @@ class Bot():
         friend = None
         user_team = None
         
+        user = user.lower()
+        
         # Searches for languages in command
         for lang in self.languages:
             if lang in message_text:
@@ -317,10 +319,11 @@ class Bot():
         # as someone else
         
         if 'same' in message_text and 'team' in message_text:
-            for people in comment_text:
+            for people in message_text:
                 if '/u/' in people:
-                    people = people.lstrip('/u/')
-                    if check_registry(people) == True:
+                    people = people.lstrip('/u/').lower()
+                    
+                    if self.check_registry(people) == True:
                         same_team = True 
                         friend = people
                     else:
@@ -335,7 +338,7 @@ class Bot():
             print ('Adding user to registry...')        
             self.registry_cache[user] = [language,
                                         experience,
-                                        registry_cache[friend][2]]
+                                        self.registry_cache[friend][2]]
             self.write_file(REGISTRY, self.registry_cache)
             self.notify(user)
         
