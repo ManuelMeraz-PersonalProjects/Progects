@@ -149,9 +149,16 @@ class Bot():
         '''
         print ('Reading unread messages...')
         message = self.r.get_unread(limit=25)
+        
         for msg in message:
-            msg_text = (str(msg).replace('\n', ' ').lower().split(' '))
+            
+            msg_text = (str(msg.body).replace('\n', ' ').lower().split(' '))
             user = str(msg.author)
+            
+            msg_text = [x.strip('@#$%^&*.,') for x in msg_text]
+            msg_text = [x.rstrip('!') for x in msg_text]
+            
+            
             for command in self.commands:
                 if command in msg_text:
                     self.commands[command](user, msg_text, msg)
@@ -179,6 +186,9 @@ class Bot():
                 user.lower() != self.bot_name.lower():
 
                 comment_text = comment.body.lower().split()
+                
+                comment_text = [x.strip('@#$%^&*.,') for x in comment_text]
+                comment_text = [x.rstrip('!') for x in comment_text]
 
                 # if comment contains a keyword, call the corresponding function
                 for command in self.commands:
