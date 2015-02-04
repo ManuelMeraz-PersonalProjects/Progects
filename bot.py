@@ -241,7 +241,7 @@ class Bot():
         print('The file {0} has been updated'.format(filename))
     
 
-    def check_registry(self, item, language=None, experience=None):
+    def check_registry(self, item)):
         '''
         Item can be either a team or a user. This function checks
         to see if there are similar teams for a user, if teams are full,
@@ -294,7 +294,6 @@ class Bot():
                     # If they match, return the person will join their team
                     return team_name
                 else:
-                    print ('Almost, not quite')
                     team_number += 1
             elif check_reg == 0:
                 return team_name
@@ -421,6 +420,19 @@ class Bot():
         user_team = None
         
         user = user.lower()
+        
+        # Unregisters user if already registered
+        # There was a bug where if a team was taken by user, then the bot
+        # would make a new team instead of replacing the team if the
+        # user was the only team member
+        try:
+            del self.registry_cache[user]            
+            self.write_file(REGISTRY, self.registry_cache)
+            register_remove = True
+            
+        except KeyError:
+
+            print("User not on registry.")
         
         
         # Searches for languages in command
