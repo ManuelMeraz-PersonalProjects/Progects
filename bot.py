@@ -35,7 +35,7 @@ class Bot():
         # dictionary containing all registered users and teams
         self.registry_cache = self.cache_create(REGISTRY)
 
-        self.r = praw.Reddit(user_agent = "Test bot for /r/progects by /u/NEET_Here and /u/triple-take")
+        self.r = praw.Reddit(user_agent = "Test bot for /r/progects by /u/NEET_Here, /u/triple-take, and /u/prog_quest")
 
         # read in username and password from external config file
         with open(CONFIG, 'r') as txt:
@@ -141,6 +141,8 @@ class Bot():
         else:
             print ('Replying to unregistered user...')
             message.reply('It looks like you aren\'t registered.')
+         
+        print (self.registry_cache)
             
     def message_search(self):
         '''
@@ -289,13 +291,14 @@ class Bot():
     def register(self, user, message_text, message):
         '''
         The registration command will register a user for events. 
-        Message is the text for the message that the user is registering
+        message_text is the text for the message that the user is registering
         with.
         '''
         language = False
         experience =  False
         same_team =  None
         team = False
+        team_list = []
         friend = None
         user_team = None
         
@@ -324,18 +327,31 @@ class Bot():
                     else:
                         same_team = False
                         
+        if 'own' in message_text and 'team' in message_text:
+            for people in message_text:
+                if '/u/' in people:
+                    people = people.lstrip('/u/').lower()
+                    team_list.append(people)
+                    team = True
+                        
         # Registers person to the same team as a friend
         if (language and experience) != False and team == False and same_team == True:
-            
-            print ('Replying to good command...')
-            message.reply('Thank you for registering. You will be on'
-                            ' the same team as /u/{0}'.format(friend))
-            print ('Adding user to registry...')        
-            self.registry_cache[user] = [language,
-                                        experience,
-                                        self.registry_cache[friend][2]]
-            self.write_file(REGISTRY, self.registry_cache)
-            self.notify(user)
+            if type(check_registry(registry_cache[friend][2])) == str:
+                
+                print ('Replying to same team command...')
+                message.reply('Thank you for registering. You will be on'
+                                ' the same team as /u/{0}'.format(friend))
+                print ('Adding user to registry...')        
+                self.registry_cache[user] = [language,
+                                            experience,
+                                            self.registry_cache[friend][2]]
+                print ('Added')
+                
+            else: 
+                print ('Replying to bad (full) same team command...')
+                message.reply('Sorry, /u/' + friend + "'s team is full.")
+                print ('Reply sent')
+        
         
         # Tells user to try registering again if the person they want to be on the
         # same team as isn't registered
@@ -346,16 +362,44 @@ class Bot():
                             ' again')
             print ('Reply sent')
         
+        # Registers custom teams
+        elif team == True:
+            
+            # Checks to see if there are enough or too many members in team
+            if 2 <= len(team_list) < 5:
+                print ('Replying to custom team command...')
+                message.reply('Thank you for registering your team. '
+                                ' A confirmation message will be sent to '
+                                'your team members.')
+                print ('Reply sent')
+                
+                # registers the user
+                self.registry_cache[user] = ['custom', 'custom', user + "'s_Team"]
+                for team_mem in team_list:
+                    self.registry_cache[team_mem] = ['custom', 'custom', user + "'s_Team"]
+                    self.notify(team_mem)
+                    print ('Messaging team member...')
+                    self.r.send_message(team_mem, 'Registered for /r/Progects hackathon', \
+                                    'You were registered by /u/' + user + ' if you would like to '
+                                    'unregister reply with !unregister.')
+                    print ('Message sent')
+                
+            else:
+                print ('Replying to bad command...')
+                message.reply('Sorry, you have either registered too many'
+                                ' or too few members. The minimum for a team'
+                                ' is 3 members and the max is 5')
+                print ('Reply sent')
+            
+            
         # Registers new user. Checks to see if there are any teams with 
-        # people of similar experience and language.     
+        # people of similar experience and language. 
         elif (language and experience) != False and team == False:
-            print ('Replying to good command...')
+            print ('Replying to new user command...')
             message.reply('Thank you for registering.')
 
             print ('Looking for team...')
             self.registry_cache[user] = [language, experience, self.team(language, experience)]
-            self.write_file(REGISTRY, self.registry_cache)
-            self.notify(user)
             print ('Found team, registering user')
             
 
@@ -364,7 +408,11 @@ class Bot():
             message.reply('Sorry, try adding your language and'
                           ' experience to your command please. Also,'
                           ' check to see if your spelling is correct')
-        
+            print ('Reply sent')
+                          
+                          
+        self.write_file(REGISTRY, self.registry_cache)
+        self.notify(user)
         print (self.registry_cache)
         
         
