@@ -326,7 +326,11 @@ class Bot():
             
         except ValueError:
             
-            message.reply('Sorry, but you currently aren\'t registered')
+            message.reply('Sorry, but you currently aren\'t registered.')
+            
+        except KeyError:
+            
+            message.reply('Sorry, but you currently aren\'t registered.')
             
     def help(self, user, message_text, message):
         '''
@@ -345,10 +349,10 @@ class Bot():
                        Use this command to register yourself or a team
                        to the event. Include the language and experience
                        level (beginner, intermediate, or advanced) if you 
-                       are registering yourself. If you are register as 
+                       are registering yourself. If you are registering as 
                        a team, then simply include the usernames of your
-                        teammates. You can also register in the same team
-                        if the team isn't full as a friend. The register
+                        teammates. You can also register in the same team 
+                        as a friend if their team isn't full. The register
                        command will also add you to the notifications list
                        which means that even after the event, you will be
                        notified of upcoming events.
@@ -406,6 +410,7 @@ class Bot():
         user_team = None
         
         user = user.lower()
+        
         
         # Searches for languages in command
         for lang in self.languages:
@@ -509,7 +514,7 @@ class Bot():
             
             except:
                 print ('User put a fake username. Replying to message...')
-                message.reply('Please use valid usernames for your team mates')
+                message.reply('Please use valid usernames for your team mates.')
                 print ('Reply sent')
                 
             
@@ -527,9 +532,7 @@ class Bot():
 
         else:
             print ('Replying to bad command...')
-            message.reply('Sorry, try adding your language (python, c++, java, or javascript) and'
-                          ' experience (beginner, intermediate, advanced) to your command please. Also,'
-                          ' check to see if your spelling is correct')
+            message.reply('Your command was not valid. Try the !help command.')
             print ('Reply sent')
                           
                           
