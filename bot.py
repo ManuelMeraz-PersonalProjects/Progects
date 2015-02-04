@@ -241,7 +241,7 @@ class Bot():
         print('The file {0} has been updated'.format(filename))
     
 
-    def check_registry(self, item)):
+    def check_registry(self, item):
         '''
         Item can be either a team or a user. This function checks
         to see if there are similar teams for a user, if teams are full,
@@ -352,10 +352,11 @@ class Bot():
                        are registering yourself. If you are registering as 
                        a team, then simply include the usernames of your
                         teammates. You can also register in the same team 
-                        as a friend if their team isn't full. The register
-                       command will also add you to the notifications list
-                       which means that even after the event, you will be
-                       notified of upcoming events.
+                        as a friend if their team isn't full.
+                        
+                       The register command will also add you to the reminder
+                        list, which means that you will receive reminders for
+                        the upcoming event and for future events.
                        
                        If you would like to change something such as the
                        language, then use the !register command again and
@@ -477,6 +478,7 @@ class Bot():
                                             experience,
                                             self.registry_cache[friend][2]]
                 print ('Added')
+                self.notify_add(user)
                 
             else: 
                 print ('Replying to bad (full) same team command...')
@@ -512,13 +514,7 @@ class Bot():
                         print ('Message sent')
                         
                         self.registry_cache[team_mem] = ['custom', 'custom', user + "'s_Team"]
-                        print("!notify command initialized. Adding {0} to notifications list.".format(team_mem))
-
-                        self.notify_cache.add(team_mem)
-                        self.write_file(NOTIFY_FILE, self.notify_cache)
-
-
-                        print('{0} added to notifications list.'.format(user))
+                        self.notify_add(team_mem)
 
                     
                     print ('Replying to custom team command...')
@@ -526,6 +522,7 @@ class Bot():
                                     ' A confirmation message will be sent to '
                                     'your team members.')
                     print ('Reply sent')
+                    self.notify_add(user)
                     
                     # registers the user
                     self.registry_cache[user] = ['custom', 'custom', user + "'s_Team"]
@@ -558,15 +555,27 @@ class Bot():
             self.registry_cache[user] = [language, experience, self.team(language, experience)]
             print ('Found team, registering user')
             
+            self.notify_add(user)
+            
 
         else:
             print ('Replying to bad command...')
-            message.reply('Your command was not valid. Try the !help command.')
+            message.reply('Your command was not valid. If you were registering'
+                            ' yourself, don\'t forget to add your preferred'
+                            ' programming language and your experience level(beginner, intermediate, advanced).'
+                            ' If there are any other issues, please try the !help command.')
             print ('Reply sent')
                           
-                          
+                        
+        
+        
+    def notify_add(self, user):
+        '''
+        Updates notification cache and file for the registry function
+        '''
+        
         self.write_file(REGISTRY, self.registry_cache)
-        print("!notify command initialized. Adding {0} to notifications list.".format(user))
+        print("Adding {0} to notifications list.".format(user))
 
         self.notify_cache.add(user)
         self.write_file(NOTIFY_FILE, self.notify_cache)
@@ -574,13 +583,11 @@ class Bot():
 
         print('{0} added to notifications list.'.format(user))
         pprint (self.registry_cache)
-        
-        
 
 
     def notify(self, user, message_text, message ):
         '''
-        Adds user to notification list
+        Adds user to notification list with the !notify command
         '''
 
         print("!notify command initialized. Adding {0} to notifications list.".format(user))
