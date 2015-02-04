@@ -23,7 +23,8 @@ class Bot():
                         '!register':self.register,
                          '!unregister':self.unregister,
                           '!team':self.team_check,
-                          '!help':self.help
+                          '!help':self.help,
+                          '!notify':self.notify
                           }
                           
         self.languages = ('python', 'c++', 'java', 'javascript', 'ruby',
@@ -388,6 +389,16 @@ class Bot():
                     
                         Example:
                                 !team
+                                
+            !notify:
+                        If you would like to be kept updated, but can't participate
+                        in the next event, then use this command. You will be
+                        added to the notifications list. If you would like to
+                        unsubcribe from the notifications, then use the 
+                        !unregister command.
+                        
+                        Example:
+                                !notify
                     ''')
                     
         print ('Messsage sent')
@@ -489,7 +500,13 @@ class Bot():
                         print ('Message sent')
                         
                         self.registry_cache[team_mem] = ['custom', 'custom', user + "'s_Team"]
-                        self.notify(team_mem)
+                        print("!notify command initialized. Adding {0} to notifications list.".format(team_mem))
+
+                        self.notify_cache.add(team_mem)
+                        self.write_file(NOTIFY_FILE, self.notify_cache)
+
+
+                        print('{0} added to notifications list.'.format(user))
 
                     
                     print ('Replying to custom team command...')
@@ -537,26 +554,36 @@ class Bot():
                           
                           
         self.write_file(REGISTRY, self.registry_cache)
-        self.notify(user)
-        pprint (self.registry_cache)
-        
-        
-
-
-    def notify(self, user):
-        '''
-        Placeholder function to add someone to the notification list or
-        whatever. Maybe merge it with notify_add()/notify_remove()? That is,
-        if we pass it some kind of 'add' or 'remove' argument.
-        '''
-
-        print("Adding {0} to notifications list.".format(user))
+        print("!notify command initialized. Adding {0} to notifications list.".format(user))
 
         self.notify_cache.add(user)
         self.write_file(NOTIFY_FILE, self.notify_cache)
 
 
         print('{0} added to notifications list.'.format(user))
+        pprint (self.registry_cache)
+        
+        
+
+
+    def notify(self, user, message_text, message ):
+        '''
+        Adds user to notification list
+        '''
+
+        print("!notify command initialized. Adding {0} to notifications list.".format(user))
+
+        self.notify_cache.add(user)
+        self.write_file(NOTIFY_FILE, self.notify_cache)
+
+
+        print('{0} added to notifications list.'.format(user))
+        
+        print("Replying to {0} .".format(user))
+        
+        message.reply('You have been added to the notification list')
+        
+        print ('Reply sent')
         
         
 
