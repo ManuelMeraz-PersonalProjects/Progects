@@ -233,38 +233,18 @@ class Bot():
         '''
         
         amount = 0
-        team_check = None
         
-        # Checks registry cache for similar teams for user
-        if language != None and experience != None:
-            
-            for key in self.registry_cache:
-                
-                if self.registry_cache[key][0] == language and self.registry_cache[key][1] == experience:
-                      
-                    team_check = self.registry_cache[key][2]
-                    
-                    for key1 in self.registry_cache:
-                        if self.registry_cache[key1][2] == team_check:
-                            amount += 1
-                            
-                    if 1 <= amount < 5:
-                        return team_check
-                    else:
-                        return False
-                else:
-                    return False
-        
-        # Checks if teams are full            
-        elif 'Team' in item:
+        # Checks if teams are full and available for the language/experience          
+        if 'Team' in item:
             
             for key in self.registry_cache:
                 
                 if self.registry_cache[key][2] == item:
-                    amount += 1
-                    
-            if amount < 5:
-                return True
+                    amount += 1       
+            if amount == 0:
+                return 0        
+            elif 1 <= amount < 5:
+                return key
             else:
                 return False
                 
@@ -276,16 +256,31 @@ class Bot():
             return False
                 
     
-    def team(self):
+    def team(self, language, experience):
         '''
-        Creates teams by checking to see if teams are full.
+        Creates teams by checking to see if teams are full for the 
+        given language and experience.
         '''
         
         
         team_number = 1
-        team_name = 'Team_{0}'.format(team_number)
         while True:
-            if self.check_registry(team_name) == True:
+            team_name = 'Team_{0}'.format(team_number)
+            print (team_name)
+            check_reg = self.check_registry(team_name)
+            # Checking if teams are full
+            if type(check_reg) == str:
+                
+                # If not full, then check to see if that team matches
+                # the language and experience
+                if language == self.registry_cache[check_reg][0] and self.registry_cache[check_reg][1] == experience:
+                    
+                    # If they match, return the person will join their team
+                    return team_name
+                else:
+                    print ('Almost, not quite')
+                    team_number += 1
+            elif check_reg == 0:
                 return team_name
             else:
                 team_number += 1
@@ -356,24 +351,13 @@ class Bot():
         elif (language and experience) != False and team == False:
             print ('Replying to good command...')
             message.reply('Thank you for registering.')
-            print ('Adding user to registry...')
+
+            print ('Looking for team...')
+            self.registry_cache[user] = [language, experience, self.team(language, experience)]
+            self.write_file(REGISTRY, self.registry_cache)
+            self.notify(user)
+            print ('Found team, registering user')
             
-            user_team = self.check_registry(user, language, experience)
-            
-            
-            if user_team == False or user_team == None:
-                self.registry_cache[user] = [language, experience, self.team()]
-                self.write_file(REGISTRY, self.registry_cache)
-                self.notify(user)
-            
-                print ('User_team was false, so used self.team()', self.team())
-            
-            else: 
-                self.registry_cache[user] = [language, experience, user_team]
-                self.write_file(REGISTRY, self.registry_cache)
-                self.notify(user)
-                
-                print ('User team was true, it is: ', user_team)
 
         else:
             print ('Replying to bad command...')
