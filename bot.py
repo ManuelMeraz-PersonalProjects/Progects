@@ -1,5 +1,5 @@
 import praw, time
-
+from pprint import pprint
 # configuration file. store name and password here
 CONFIG = 'config.txt'
 
@@ -19,10 +19,16 @@ class Bot():
         Handle various setup functions, including logging into Reddit.
         '''
         # List of words bot looks for and their associated commands
-        self.commands = {'!register':self.register, '!unregister':self.unregister}
+        self.commands = {
+                        '!register':self.register,
+                         '!unregister':self.unregister,
+                          '!team':self.team_check,
+                          '!help':self.help
+                          }
+                          
         self.languages = ('python', 'c++', 'java', 'javascript', 'ruby')
         self.experience = ('beginner', 'intermediate', 'advanced')
-        self.same_team = ('same', 'team')
+        
         # Subreddits to search for
         self.subreddit_list = ['progects', 'test']
         
@@ -142,7 +148,7 @@ class Bot():
             print ('Replying to unregistered user...')
             message.reply('It looks like you aren\'t registered.')
          
-        print (self.registry_cache)
+        pprint (self.registry_cache)
             
     def message_search(self):
         '''
@@ -286,14 +292,92 @@ class Bot():
                 return team_name
             else:
                 team_number += 1
+    def team_check(self, user, message_text, message):
+        '''
+        Command allows user to check their team members by using !team
+        '''
+        print ('!team command initialized')
+        try:
+            team = self.registry_cache[user.lower()][2].replace('_', ' ').lower()
+            string = "You're in {0} with: \n\n\t\t".format(team)
+
+            for key in self.registry_cache:
+                if self.registry_cache[key][2].replace('_', ' ').lower() == team:
+                    
+                    # If user has custom team the bot will reply with just the names
+                    if 'custom' in self.registry_cache[key]:
+                        string += '/u/{0} \n\n\t\t'.format(key)
+                        
+                    # Replies with all information for bot made teams    
+                    else:
+                        string += '/u/{0} using the language {1} with {2} experience\n\n\t\t'.format(key,\
+                            self.registry_cache[key][0], self.registry_cache[key][1])
+                        
+            print ('Replying to message...')
+            message.reply(string)
+            print ('Reply sent')
+            
+        except ValueError:
+            
+            message.reply('Sorry, but you currently aren\'t registered')
+            
+    def help(self, user, message_text, message):
+        '''
+        This command (!commands) send a message to the user explaining
+        the commands that the bot has available and what they do
+        '''
+        print ('!command initialized')
+        message.reply('''
+        PORGECTS_BOT1 registers users for /r/Progects events. 
+        
+        The commands that are available are:
+            !register:
+                       Use this command to register yourself or a team
+                       to the event. Include the language and experience
+                       level if you are registering yourself. If you are
+                       register as a team, then simply include the usernames
+                       of your teammates. You can also register in the same
+                       team if the team isn't full as a friend. The register
+                       command will also add you to the notifications list
+                       which means that even after the event, you will be
+                       notified of upcoming events.
+                       
+                       If you would like to change something such as the
+                       language, then use the !register command again and
+                       it will override your past settings.
+                       
+                        If you would like to be
+                       removed, simply use the command !unregister.
+                       
+                       .
+                       Examples:
+                                !register me as a python beginner
+                                !register self python advanced
+                                !register me using c++ as an intermediate user
+                                !register me on the same team as /u/user
+                                !register my team /u/user1 and /u/user2
+                                !register my own team /u/user1, /u/user2, /u/user3
+                                !register me with /u/user
+            
+            !unregister:
+                        Use this command to unregister from the event
+                        and be removed from the notifications list.
+            
+            !team:
+                    Returns the users in your team. If you are in a custom
+                    team it will return the usernames only. If you registered
+                    by yourself, you can see who is currently on your team.
+                    ''')
 
                         
     def register(self, user, message_text, message):
         '''
-        The registration command will register a user for events. 
+        The registration command (!register) will register a user for events. 
         message_text is the text for the message that the user is registering
         with.
         '''
+        print ('Register command initialized')
+        
         language = False
         experience =  False
         same_team =  None
@@ -319,7 +403,7 @@ class Bot():
         if 'same' in message_text and 'team' in message_text:
             for people in message_text:
                 if '/u/' in people:
-                    people = people.lstrip('/u/').lower()
+                    people = people.lstrip('/u/').rstrip('.,').lower()
                     
                     if self.check_registry(people) == True:
                         same_team = True 
@@ -327,7 +411,7 @@ class Bot():
                     else:
                         same_team = False
                         
-        if 'own' in message_text and 'team' in message_text:
+        if ((('own' or 'my') and 'team')) or ('me' and 'with') in message_text:
             for people in message_text:
                 if '/u/' in people:
                     people = people.lstrip('/u/').lower()
@@ -364,32 +448,51 @@ class Bot():
         
         # Registers custom teams
         elif team == True:
+            if user in team_list: team_list.remove(user)
             
             # Checks to see if there are enough or too many members in team
-            if 2 <= len(team_list) < 5:
-                print ('Replying to custom team command...')
-                message.reply('Thank you for registering your team. '
-                                ' A confirmation message will be sent to '
-                                'your team members.')
+            try:
+                print ('Trying')
+                if 1 <= len(team_list) < 5:
+                    
+                    for team_mem in team_list:
+
+                        
+                        print ('Messaging team member...')
+                        self.r.send_message(team_mem, 'Registered for /r/Progects hackathon', \
+                                        'You were registered by /u/' + user + ' if you would like to '
+                                        'unregister reply with !unregister.') 
+                        print ('Message sent')
+                        
+                        self.registry_cache[team_mem] = ['custom', 'custom', user + "'s_Team"]
+                        self.notify(team_mem)
+
+                    
+                    print ('Replying to custom team command...')
+                    message.reply('Thank you for registering your team. '
+                                    ' A confirmation message will be sent to '
+                                    'your team members.')
+                    print ('Reply sent')
+                    
+                    # registers the user
+                    self.registry_cache[user] = ['custom', 'custom', user + "'s_Team"]
+                else:
+                    print ('Replying to bad command...')
+                    message.reply('Sorry, you have either registered too many'
+                                    ' or too few members. The minimum for a team'
+                                    ' is 2 members and the max is 5')
+                    print ('Reply sent')
+
+                        
+
+                                        
+            # Need to fix this exception eventually.
+            
+            except:
+                print ('User put a fake username. Replying to message...')
+                message.reply('Please use valid usernames for your team mates')
                 print ('Reply sent')
                 
-                # registers the user
-                self.registry_cache[user] = ['custom', 'custom', user + "'s_Team"]
-                for team_mem in team_list:
-                    self.registry_cache[team_mem] = ['custom', 'custom', user + "'s_Team"]
-                    self.notify(team_mem)
-                    print ('Messaging team member...')
-                    self.r.send_message(team_mem, 'Registered for /r/Progects hackathon', \
-                                    'You were registered by /u/' + user + ' if you would like to '
-                                    'unregister reply with !unregister.')
-                    print ('Message sent')
-                
-            else:
-                print ('Replying to bad command...')
-                message.reply('Sorry, you have either registered too many'
-                                ' or too few members. The minimum for a team'
-                                ' is 3 members and the max is 5')
-                print ('Reply sent')
             
             
         # Registers new user. Checks to see if there are any teams with 
@@ -405,15 +508,15 @@ class Bot():
 
         else:
             print ('Replying to bad command...')
-            message.reply('Sorry, try adding your language and'
-                          ' experience to your command please. Also,'
+            message.reply('Sorry, try adding your language (python, c++, java, or javascript) and'
+                          ' experience (beginner, intermediate, advanced) to your command please. Also,'
                           ' check to see if your spelling is correct')
             print ('Reply sent')
                           
                           
         self.write_file(REGISTRY, self.registry_cache)
         self.notify(user)
-        print (self.registry_cache)
+        pprint (self.registry_cache)
         
         
 
@@ -468,7 +571,8 @@ class Bot():
 
         # Used to stop bot for certain amount of time to not
         # overload the server
-        time.sleep(10)
+        print ('Iteration complete')
+        time.sleep(5)
 
 
 def main():
@@ -480,7 +584,7 @@ def main():
         
         print ('Iteration: %d' % i)
         bot.runbot()
-        print ('Iteration complete')
+
         
         i += 1
 
