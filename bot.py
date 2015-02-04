@@ -26,7 +26,8 @@ class Bot():
                           '!help':self.help
                           }
                           
-        self.languages = ('python', 'c++', 'java', 'javascript', 'ruby')
+        self.languages = ('python', 'c++', 'java', 'javascript', 'ruby',
+                            'c','perl', 'shell')
         self.experience = ('beginner', 'intermediate', 'advanced')
         
         # Subreddits to search for
@@ -166,7 +167,9 @@ class Bot():
             msg_text = [x.strip('@#$%^&*.,') for x in msg_text]
             msg_text = [x.rstrip('!') for x in msg_text]
             
-            
+            # If bot gets a reply to a comment. It will also get an
+            # unread message, this clears the unread message if it pops
+            # up in the inbox.
             for command in self.commands:
                 if command in msg_text:
                     self.commands[command](user, msg_text, msg)
@@ -209,6 +212,10 @@ class Bot():
 
                         # Update cache files
                         self.comment_cache.add(comment.id)
+                        
+                        message = self.r.get_unread(limit=25)
+                        for msg in message:
+                            msg.mark_as_read()
 
                         # update comment cache file
                         self.write_file(COMMENT_ID_FILE, self.comment_cache)
@@ -326,18 +333,22 @@ class Bot():
         This command (!commands) send a message to the user explaining
         the commands that the bot has available and what they do
         '''
-        print ('!command initialized')
-        message.reply('''
+        print ('!help command initialized')
+        self.r.send_message(user, 'Help with /u/PROGECTS_BOT1', '''
         PORGECTS_BOT1 registers users for /r/Progects events. 
+        
+        You can reply to this message with commands or make a post anywhere
+        in the subreddit with a command. 
         
         The commands that are available are:
             !register:
                        Use this command to register yourself or a team
                        to the event. Include the language and experience
-                       level if you are registering yourself. If you are
-                       register as a team, then simply include the usernames
-                       of your teammates. You can also register in the same
-                       team if the team isn't full as a friend. The register
+                       level (beginner, intermediate, or advanced) if you 
+                       are registering yourself. If you are register as 
+                       a team, then simply include the usernames of your
+                        teammates. You can also register in the same team
+                        if the team isn't full as a friend. The register
                        command will also add you to the notifications list
                        which means that even after the event, you will be
                        notified of upcoming events.
@@ -362,12 +373,20 @@ class Bot():
             !unregister:
                         Use this command to unregister from the event
                         and be removed from the notifications list.
+                        
+                        Example:
+                                !unregister
             
             !team:
-                    Returns the users in your team. If you are in a custom
-                    team it will return the usernames only. If you registered
-                    by yourself, you can see who is currently on your team.
+                        Returns the users in your team. If you are in a custom
+                        team it will return the usernames only. If you registered
+                        by yourself, you can see who is currently on your team.
+                    
+                        Example:
+                                !team
                     ''')
+                    
+        print ('Messsage sent')
 
                         
     def register(self, user, message_text, message):
@@ -572,7 +591,7 @@ class Bot():
         # Used to stop bot for certain amount of time to not
         # overload the server
         print ('Iteration complete')
-        time.sleep(5)
+        time.sleep(30)
 
 
 def main():
