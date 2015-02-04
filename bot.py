@@ -29,7 +29,7 @@ class Bot():
         self.languages = ('python', 'c++', 'java', 'javascript', 'ruby',
                             'c','perl', 'shell')
         self.experience = ('beginner', 'intermediate', 'advanced')
-        
+
         # Subreddits to search for
         self.subreddit_list = ['progects', 'test']
         
