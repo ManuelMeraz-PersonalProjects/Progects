@@ -173,6 +173,7 @@ class Bot():
             # up in the inbox.
             for command in self.commands:
                 if command in msg_text:
+                    user = user.lower()
                     self.commands[command](user, msg_text, msg)
                     msg.mark_as_read()
                 
@@ -208,11 +209,9 @@ class Bot():
                     if command in comment_text:
 
                         # Executes command
+                        user = user.lower()
                         self.commands[command](user, comment_text, comment)
                         
-
-                        # Update cache files
-                        self.comment_cache.add(comment.id)
                         
                         message = self.r.get_unread(limit=25)
                         for msg in message:
@@ -220,7 +219,10 @@ class Bot():
 
                         # update comment cache file
                         self.write_file(COMMENT_ID_FILE, self.comment_cache)
-            
+                        
+                # Update cache files
+                self.comment_cache.add(comment.id)
+    
 
     def write_file(self, filename, cache):
         ''' Function to write cache data to a file'''
@@ -305,7 +307,7 @@ class Bot():
         '''
         print ('!team command initialized')
         try:
-            team = self.registry_cache[user.lower()][2].replace('_', ' ').lower()
+            team = self.registry_cache[user][2].replace('_', ' ').lower()
             string = "You're in {0} with: \n\n\t\t".format(team)
 
             for key in self.registry_cache:
@@ -343,6 +345,8 @@ class Bot():
         
         You can reply to this message with commands or make a post anywhere
         in the subreddit with a command. 
+        
+        Don't forget to refresh your inbox for replies.
         
         The commands that are available are:
             !register:
@@ -402,6 +406,17 @@ class Bot():
                     ''')
                     
         print ('Messsage sent')
+    
+    def unreg(self, user):
+        '''
+        Unregister user without replying
+        '''
+        try:
+            del self.registry_cache[user]        
+            
+        except KeyError:
+
+            pass
 
                         
     def register(self, user, message_text, message):
@@ -420,20 +435,6 @@ class Bot():
         friend = None
         user_team = None
         
-        user = user.lower()
-        
-        # Unregisters user if already registered
-        # There was a bug where if a team was taken by user, then the bot
-        # would make a new team instead of replacing the team if the
-        # user was the only team member
-        try:
-            del self.registry_cache[user]            
-            self.write_file(REGISTRY, self.registry_cache)
-            register_remove = True
-            
-        except KeyError:
-
-            print("User not on registry.")
         
         
         # Searches for languages in command
@@ -459,7 +460,7 @@ class Bot():
                     else:
                         same_team = False
                         
-        if ((('own' or 'my') and 'team')) or ('me' and 'with') in message_text:
+        if ((('own' or 'my') and 'team')) and ('me' and 'with') in message_text:
             for people in message_text:
                 if '/u/' in people:
                     people = people.lstrip('/u/').lower()
@@ -473,10 +474,13 @@ class Bot():
                 print ('Replying to same team command...')
                 message.reply('Thank you for registering. You will be on'
                                 ' the same team as /u/{0}'.format(friend))
-                print ('Adding user to registry...')        
+                print ('Adding user to registry...')
+                self.unreg(user)      
                 self.registry_cache[user] = [language,
                                             experience,
                                             self.registry_cache[friend][2]]
+
+                
                 print ('Added')
                 self.notify_add(user)
                 
@@ -512,7 +516,7 @@ class Bot():
                                         'You were registered by /u/' + user + ' if you would like to '
                                         'unregister reply with !unregister.') 
                         print ('Message sent')
-                        
+                        self.unreg(team_mem)
                         self.registry_cache[team_mem] = ['custom', 'custom', user + "'s_Team"]
                         self.notify_add(team_mem)
 
@@ -522,10 +526,12 @@ class Bot():
                                     ' A confirmation message will be sent to '
                                     'your team members.')
                     print ('Reply sent')
-                    self.notify_add(user)
+                    
                     
                     # registers the user
+                    self.unreg(user)
                     self.registry_cache[user] = ['custom', 'custom', user + "'s_Team"]
+                    self.notify_add(user)
                 else:
                     print ('Replying to bad command...')
                     message.reply('Sorry, you have either registered too many'
@@ -552,6 +558,7 @@ class Bot():
             message.reply('Thank you for registering.')
 
             print ('Looking for team...')
+            self.unreg(user)
             self.registry_cache[user] = [language, experience, self.team(language, experience)]
             print ('Found team, registering user')
             
@@ -565,16 +572,16 @@ class Bot():
                             ' programming language and your experience level(beginner, intermediate, advanced).'
                             ' If there are any other issues, please try the !help command.')
             print ('Reply sent')
-                          
+            
+        # Updates registry file             
+        self.write_file(REGISTRY, self.registry_cache)
                         
-        
         
     def notify_add(self, user):
         '''
-        Updates notification cache and file for the registry function
+        Updates notification cache
         '''
         
-        self.write_file(REGISTRY, self.registry_cache)
         print("Adding {0} to notifications list.".format(user))
 
         self.notify_cache.add(user)
