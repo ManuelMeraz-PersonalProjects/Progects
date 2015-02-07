@@ -1,0 +1,3 @@
+[BotLogin]
+username = PROGECTS_BOT1
+password = B0tP@ssword

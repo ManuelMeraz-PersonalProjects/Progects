@@ -1,5 +1,6 @@
 import praw, time
 from pprint import pprint
+from configparser import ConfigParser
 # configuration file. store name and password here
 CONFIG = 'config.txt'
 
@@ -46,12 +47,11 @@ class Bot():
         self.r = praw.Reddit(user_agent = "Test bot for /r/progects by /u/NEET_Here, /u/triple-take, and /u/prog_quest")
 
         # read in username and password from external config file
-        with open(CONFIG, 'r') as txt:
-
-            contents = [line.strip('\n') for line in txt.readlines()]
-
-            self.bot_name = contents[0]
-            self.password = contents[1]
+        config = configparser.ConfigParser()
+        config.read(CONFIG)
+        config.sections()
+        botname = config.get('BotLogin', 'username')
+        password = config.get('BotLogin', 'password')
 
         # create PRAW subreddit objects
         # did some testing, this only needs to be done once,
@@ -340,70 +340,12 @@ class Bot():
         the commands that the bot has available and what they do
         '''
         print ('!help command initialized')
-        self.r.send_message(user, 'Help with /u/PROGECTS_BOT1', '''
-        PORGECTS_BOT1 registers users for /r/Progects events. 
         
-        You can reply to this message with commands or make a post anywhere
-        in the subreddit with a command. 
-        
-        Don't forget to refresh your inbox for replies.
-        
-        The commands that are available are:
-            !register:
-                       Use this command to register yourself or a team
-                       to the event. Include the language and experience
-                       level (beginner, intermediate, or advanced) if you 
-                       are registering yourself. If you are registering as 
-                       a team, then simply include the usernames of your
-                        teammates. You can also register in the same team 
-                        as a friend if their team isn't full.
-                        
-                       The register command will also add you to the reminder
-                        list, which means that you will receive reminders for
-                        the upcoming event and for future events.
-                       
-                       If you would like to change something such as the
-                       language, then use the !register command again and
-                       it will override your past settings.
-                       
-                        If you would like to be
-                       removed, simply use the command !unregister.
-                       
-                       .
-                       Examples:
-                                !register me as a python beginner
-                                !register self python advanced
-                                !register me using c++ as an intermediate user
-                                !register me on the same team as /u/user
-                                !register my team /u/user1 and /u/user2
-                                !register my own team /u/user1, /u/user2, /u/user3
-                                !register me with /u/user
+        help_text = ''
+        with open('help.txt', 'r') as f:
+            help_text = f.read()
             
-            !unregister:
-                        Use this command to unregister from the event
-                        and be removed from the notifications list.
-                        
-                        Example:
-                                !unregister
-            
-            !team:
-                        Returns the users in your team. If you are in a custom
-                        team it will return the usernames only. If you registered
-                        by yourself, you can see who is currently on your team.
-                    
-                        Example:
-                                !team
-                                
-            !notify:
-                        If you would like to be kept updated, but can't participate
-                        in the next event, then use this command. You will be
-                        added to the notifications list. If you would like to
-                        unsubcribe from the notifications, then use the 
-                        !unregister command.
-                        
-                        Example:
-                                !notify
-                    ''')
+        self.r.send_message(user, 'Help with /u/PROGECTS_BOT1', help_text)
                     
         print ('Messsage sent')
     
@@ -651,17 +593,19 @@ class Bot():
 
 
 def main():
+    try:
+        bot = Bot()
 
-    bot = Bot()
+        i = 1
+        while True:
+            
+            print ('Iteration: %d' % i)
+            bot.runbot()
 
-    i = 1
-    while True:
-        
-        print ('Iteration: %d' % i)
-        bot.runbot()
-
-        
-        i += 1
+            
+            i += 1
+    except HTTPError:
+        time.sleep(60)
 
 
 if __name__ == '__main__':
