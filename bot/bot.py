@@ -46,6 +46,9 @@ class Bot():
         
         # time until next event in seconds
         self.datetime = None
+        
+        # Thread ID for event thread
+        threadID = None
 
         self.r = praw.Reddit(user_agent = "Test bot for /r/progects by /u/NEET_Here, /u/triple-take, and /u/prog_quest")
 
@@ -169,12 +172,12 @@ class Bot():
                         message = self.r.get_unread(limit=25)
                         for msg in message:
                             msg.mark_as_read()
-
+                            
+                        # Update cache files
+                        self.ID_cache.add(comment.id)
+                        
                         # update comment cache file
                         cache.writefile(ID_FILE, self.ID_cache)
-
-                # Update cache files
-                self.ID_cache.add(comment.id)
 
     def check_registry(self, item):
         '''
@@ -504,36 +507,48 @@ class Bot():
         '''
         Searches for dates in events and notifies people of upcoming events
         '''
-        threadID = None
+        message = None
+        msg_title = None
+        new_thread = subreddit.get_new(limit = 5)
+        
         if self.datetime == None:
-            print ('Datetime not set. Searching for datetime')
-            new_thread = subreddit.get_new(limit = 5)
+            print ('Datetime not set. Searching for datetime in subreddit {0}'.format(subreddit))
             for thread in new_thread:
                 title = thread.title
                 dateseconds = schedule.date(title)
-                if dateseconds != False:
+                if dateseconds != False and thread.id not in self.ID_cache:
+                    self.threadID = thread.id
                     self.datetime = dateseconds
                     print ('Datetime is set')   
                                     
                     print ('Notifying users of upcoming event')
                     for name in self.notify_cache:
-                        self.r.send_message(name, 'A Progect has been posted for /r/Progects!'\
-                                                , 'message')  
+                        if name != '':
+                            self.r.send_message(name, 'A Progect has been posted for /r/Progects!'\
+                                                    , 'new event!')  
                     print ('Users have been notified')
                     
         elif self.datetime != None:
             print ('Checking time until event...')       
             message, msg_title = schedule.confirm(self.datetime)
+            print ('Checked')
             if type(message) == str:
                 ('Event will be soon, notifying users')
                 for name in self.notify_cache:
-                    self.r.send_message(name, msg_title, message)
+                    if name != '':
+                        self.r.send_message(name, msg_title, message)
                 ('All users have been notified')
+                
             elif message == True:
                 print ('The event date has passed. Adding Thread ID to cache...')
                 self.datetime = None
-                ID_cache.add[ThreadID]
+                print ('Adding thread ID {0} to cache file'.format(self.threadID))
+                self.ID_cache.add(self.threadID)
                 print ('Thread ID added')
+                cache.writefile(ID_FILE, self.ID_cache)
+                
+        if self.datetime == None:
+            print ('Datetime not found')
                 
                 
             

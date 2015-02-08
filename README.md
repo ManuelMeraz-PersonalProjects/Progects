@@ -14,6 +14,10 @@ Current short term goals:
 Eventually:
   
   * If error occurs, create log file and email it
+  * Notify users when a new person joins the team
+  * Make use of config file
+  * Create well worded messages and wiki
+  
   
 Current Bugs:
   * Does not correctly organize people into teams. Put everyone on Team_1 until it's full
