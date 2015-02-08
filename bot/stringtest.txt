@@ -1,0 +1,10 @@
+timestamp - Error:
+Traceback (most recent call last):
+  File "bot.py", line 586, in main
+    bot.runbot()
+  File "bot.py", line 574, in runbot
+    time.sleep(30)
+KeyboardInterrupt
+
+
+

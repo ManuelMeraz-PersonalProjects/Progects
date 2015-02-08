@@ -1,4 +1,4 @@
-import praw, time, cache, configparser, schedule
+import praw, time, cache, configparser, schedule, datetime, traceback
 from pprint import pprint
 
 # configuration file. store name and password here
@@ -582,14 +582,19 @@ def main():
     while True:
 
         print ('Iteration: %d' % i)
-        #try:
-        bot.runbot()
-        exception = 0
-        #except:
-            #exception += 1
-            #time.sleep(60)
+        try:
+            bot.runbot()
+            exception = 0
+        
+        except:
+            timestamp = datetime.date.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+            error_message = traceback.format_exc()
 
-        i += 1
+            with open('stringtest.txt', 'a+') as f:
+                f.write('timestamp' + ' - Error:\n' + error_message + '\n\n\n')
+            print('Sleeping....zzzzzz')
+            time.sleep(60)
+            exception += 1
         
         if exception >= 3:
             break
