@@ -1,11 +1,11 @@
-import praw, time
+import praw, time, cache, configparser, schedule
 from pprint import pprint
-from configparser import ConfigParser
+
 # configuration file. store name and password here
 CONFIG = 'config.txt'
 
 # file containing all seen comments to date
-COMMENT_ID_FILE = 'commentIDcache.txt'
+ID_FILE = 'IDcache.txt'
 
 # file containing the user ID's on the notification list
 NOTIFY_FILE = 'notifications.txt'
@@ -27,31 +27,34 @@ class Bot():
                           '!help':self.help,
                           '!notify':self.notify
                           }
-                          
+
         self.languages = ('python', 'c++', 'java', 'javascript', 'ruby',
                             'c','perl', 'shell')
         self.experience = ('beginner', 'intermediate', 'advanced')
 
         # Subreddits to search for
         self.subreddit_list = ['progects', 'test']
-        
+
         # set containing all comments seen so far
-        self.comment_cache = self.cache_create(COMMENT_ID_FILE)
+        self.ID_cache = cache.cachelist(ID_FILE)
 
         # set containing current list of users signed up for notifications
-        self.notify_cache = self.cache_create(NOTIFY_FILE)
-        
+        self.notify_cache = cache.cachelist(NOTIFY_FILE)
+
         # dictionary containing all registered users and teams
-        self.registry_cache = self.cache_create(REGISTRY)
+        self.registry_cache = cache.cachedict(REGISTRY)
+        
+        # time until next event in seconds
+        self.datetime = None
 
         self.r = praw.Reddit(user_agent = "Test bot for /r/progects by /u/NEET_Here, /u/triple-take, and /u/prog_quest")
 
         # read in username and password from external config file
-        config = configparser.ConfigParser()
-        config.read(CONFIG)
-        config.sections()
-        botname = config.get('BotLogin', 'username')
-        password = config.get('BotLogin', 'password')
+        self.config = configparser.ConfigParser()
+        self.config.read(CONFIG)
+        self.config.sections()
+        self.botname = self.config.get('BotLogin', 'username')
+        self.password = self.config.get('BotLogin', 'password')
 
         # create PRAW subreddit objects
         # did some testing, this only needs to be done once,
@@ -60,56 +63,9 @@ class Bot():
 
         # login
         print("Logging in...")
-        self.r.login(self.bot_name, self.password)
+        self.r.login(self.botname, self.password)
 
         print("Successfull login...")
-    
-
-
-
-    def cache_create(self, filename):
-        '''
-        Pulls information from file and creates cache
-        '''
-        
-        # Checks if dictionary cache will be created
-        if filename == REGISTRY:
-            
-            cache = {}
-            
-            with open(filename, 'r') as f:
-                try:
-                
-                    # separates the lines in file
-                    for item in f.read().splitlines():
-                        
-                        # Creates 2 variables with the key and value
-                        (key, value) = item.rstrip().split(None, 1)
-                        
-                        # Splits the value string into a list
-                        value = value.split(' ')
-                        
-                        cache[key] = value
-                except ValueError:
-                    print ('Registry empty')
-         
-         # else it creates normal cache set   
-        else:
-                
-            cache = set()
-            
-            with open(filename, 'r') as f:
-
-                # drop trailing newlines
-                cache_read = [line.rstrip() for line in f.readlines()]
-
-                # add them to set (this also handles duplicate entries if they occur)
-                [cache.add(comment) for comment in cache_read]
-
-        return cache
-
-
-
 
     def unregister(self, user, message_text, message):
         '''
@@ -118,27 +74,27 @@ class Bot():
         '''
         notify_remove = False
         register_remove = False
-        
+
         try:
-            
+
             self.notify_cache.remove(user)
-            self.write_file(NOTIFY_FILE, self.notify_cache)
+            cache.writefile(NOTIFY_FILE, self.notify_cache)
             notify_remove =  True
-            
+
         except KeyError:
 
             print("User not on notify list")
 
-            
+
         try:
-            del self.registry_cache[user]            
-            self.write_file(REGISTRY, self.registry_cache)
+            del self.registry_cache[user]
+            cache.writefile(REGISTRY, self.registry_cache)
             register_remove = True
-            
+
         except KeyError:
 
             print("User not on registry.")
-            
+
         if notify_remove == True and register_remove == True:
             print ('Removing user from registry and notifications...')
             message.reply('You have been removed from the event and '
@@ -149,9 +105,9 @@ class Bot():
         else:
             print ('Replying to unregistered user...')
             message.reply('It looks like you aren\'t registered.')
-         
+
         pprint (self.registry_cache)
-            
+
     def message_search(self):
         '''
         Searches for keywords in private messages and respods with
@@ -159,15 +115,15 @@ class Bot():
         '''
         print ('Reading unread messages...')
         message = self.r.get_unread(limit=25)
-        
+
         for msg in message:
-            
+
             msg_text = (str(msg.body).replace('\n', ' ').lower().split(' '))
             user = str(msg.author)
-            
+
             msg_text = [x.strip('@#$%^&*.,') for x in msg_text]
             msg_text = [x.rstrip('!') for x in msg_text]
-            
+
             # If bot gets a reply to a comment. It will also get an
             # unread message, this clears the unread message if it pops
             # up in the inbox.
@@ -176,10 +132,6 @@ class Bot():
                     user = user.lower()
                     self.commands[command](user, msg_text, msg)
                     msg.mark_as_read()
-                
-            
-        
-
 
     def comment_search(self, subreddit):
         '''
@@ -192,14 +144,15 @@ class Bot():
         print("Reading comments in subreddit {0}...".format(subreddit))
         for comment in comment_list:
 
+
             # should keep capitalization
             user = str(comment.author)
 
-            if comment.id not in self.comment_cache and \
-                user.lower() != self.bot_name.lower():
+            if comment.id not in self.ID_cache and \
+                user.lower() != self.botname.lower():
 
                 comment_text = comment.body.lower().split()
-                
+
                 comment_text = [x.strip('@#$%^&*.,') for x in comment_text]
                 comment_text = [x.rstrip('!') for x in comment_text]
 
@@ -211,37 +164,17 @@ class Bot():
                         # Executes command
                         user = user.lower()
                         self.commands[command](user, comment_text, comment)
-                        
-                        
+
+
                         message = self.r.get_unread(limit=25)
                         for msg in message:
                             msg.mark_as_read()
 
                         # update comment cache file
-                        self.write_file(COMMENT_ID_FILE, self.comment_cache)
-                        
+                        cache.writefile(ID_FILE, self.ID_cache)
+
                 # Update cache files
-                self.comment_cache.add(comment.id)
-    
-
-    def write_file(self, filename, cache):
-        ''' Function to write cache data to a file'''
-
-        print('Writing data to {0}'.format(filename))
-
-        with open(filename, 'w+') as f:
-            if type(cache) == dict:
-                for key in cache:
-                    f.write(key + ' ',)
-                    for value in cache[key]:
-                        f.write(str(value) + ' ')
-                    f.write('\n')
-            else:
-                for item in cache:                   
-                    f.write(item + '\n')
-
-        print('The file {0} has been updated'.format(filename))
-    
+                self.ID_cache.add(comment.id)
 
     def check_registry(self, item):
         '''
@@ -249,38 +182,38 @@ class Bot():
         to see if there are similar teams for a user, if teams are full,
         and if a user is in the registry
         '''
-        
+
         amount = 0
-        
-        # Checks if teams are full and available for the language/experience          
+
+        # Checks if teams are full and available for the language/experience
         if 'Team' in item:
-            
+
             for key in self.registry_cache:
-                
+
                 if self.registry_cache[key][2] == item:
-                    amount += 1       
+                    amount += 1
             if amount == 0:
-                return 0        
+                return 0
             elif 1 <= amount < 5:
                 return key
             else:
                 return False
-                
+
         # Checks for users
         elif item in self.registry_cache:
             return True
-            
+
         else:
             return False
-                
-    
+
     def team(self, language, experience):
+
         '''
-        Creates teams by checking to see if teams are full for the 
+        Creates teams by checking to see if teams are full for the
         given language and experience.
         '''
-        
-        
+
+
         team_number = 1
         while True:
             team_name = 'Team_{0}'.format(team_number)
@@ -288,11 +221,11 @@ class Bot():
             check_reg = self.check_registry(team_name)
             # Checking if teams are full
             if type(check_reg) == str:
-                
+
                 # If not full, then check to see if that team matches
                 # the language and experience
                 if language == self.registry_cache[check_reg][0] and self.registry_cache[check_reg][1] == experience:
-                    
+
                     # If they match, return the person will join their team
                     return team_name
                 else:
@@ -301,6 +234,7 @@ class Bot():
                 return team_name
             else:
                 team_number += 1
+
     def team_check(self, user, message_text, message):
         '''
         Command allows user to check their team members by using !team
@@ -312,63 +246,62 @@ class Bot():
 
             for key in self.registry_cache:
                 if self.registry_cache[key][2].replace('_', ' ').lower() == team:
-                    
+
                     # If user has custom team the bot will reply with just the names
                     if 'custom' in self.registry_cache[key]:
                         string += '/u/{0} \n\n\t\t'.format(key)
-                        
-                    # Replies with all information for bot made teams    
+
+                    # Replies with all information for bot made teams
                     else:
                         string += '/u/{0} using the language {1} with {2} experience\n\n\t\t'.format(key,\
                             self.registry_cache[key][0], self.registry_cache[key][1])
-                        
+
             print ('Replying to message...')
             message.reply(string)
             print ('Reply sent')
-            
+
         except ValueError:
-            
+
             message.reply('Sorry, but you currently aren\'t registered.')
-            
+
         except KeyError:
-            
+
             message.reply('Sorry, but you currently aren\'t registered.')
-            
+
     def help(self, user, message_text, message):
         '''
         This command (!commands) send a message to the user explaining
         the commands that the bot has available and what they do
         '''
         print ('!help command initialized')
-        
+
         help_text = ''
         with open('help.txt', 'r') as f:
             help_text = f.read()
-            
+
         self.r.send_message(user, 'Help with /u/PROGECTS_BOT1', help_text)
-                    
+
         print ('Messsage sent')
-    
+
     def unreg(self, user):
         '''
         Unregister user without replying
         '''
         try:
-            del self.registry_cache[user]        
-            
+            del self.registry_cache[user]
+
         except KeyError:
 
             pass
 
-                        
     def register(self, user, message_text, message):
         '''
-        The registration command (!register) will register a user for events. 
+        The registration command (!register) will register a user for events.
         message_text is the text for the message that the user is registering
         with.
         '''
         print ('Register command initialized')
-        
+
         language = False
         experience =  False
         same_team =  None
@@ -376,62 +309,62 @@ class Bot():
         team_list = []
         friend = None
         user_team = None
-        
-        
-        
+
+
+
         # Searches for languages in command
         for lang in self.languages:
             if lang in message_text:
                 language = lang
-        # Searches for experience level in command        
+        # Searches for experience level in command
         for exp in self.experience:
             if exp in message_text:
                 experience = exp
-                
-        # Searches to see if someone would like to be in the same team 
+
+        # Searches to see if someone would like to be in the same team
         # as someone else
-        
+
         if 'same' in message_text and 'team' in message_text:
             for people in message_text:
                 if '/u/' in people:
                     people = people.lstrip('/u/').rstrip('.,').lower()
-                    
+
                     if self.check_registry(people) == True:
-                        same_team = True 
+                        same_team = True
                         friend = people
                     else:
                         same_team = False
-                        
+
         if ((('own' or 'my') and 'team')) and ('me' and 'with') in message_text:
             for people in message_text:
                 if '/u/' in people:
                     people = people.lstrip('/u/').lower()
                     team_list.append(people)
                     team = True
-                        
+
         # Registers person to the same team as a friend
         if (language and experience) != False and team == False and same_team == True:
             if type(check_registry(registry_cache[friend][2])) == str:
-                
+
                 print ('Replying to same team command...')
                 message.reply('Thank you for registering. You will be on'
                                 ' the same team as /u/{0}'.format(friend))
                 print ('Adding user to registry...')
-                self.unreg(user)      
+                self.unreg(user)
                 self.registry_cache[user] = [language,
                                             experience,
                                             self.registry_cache[friend][2]]
 
-                
+
                 print ('Added')
                 self.notify_add(user)
-                
-            else: 
+
+            else:
                 print ('Replying to bad (full) same team command...')
                 message.reply('Sorry, /u/' + friend + "'s team is full.")
                 print ('Reply sent')
-        
-        
+
+
         # Tells user to try registering again if the person they want to be on the
         # same team as isn't registered
         elif (language and experience) != False and team == False and same_team == False:
@@ -440,36 +373,36 @@ class Bot():
                             ' with isn\'t registered. Please try registering'
                             ' again')
             print ('Reply sent')
-        
+
         # Registers custom teams
         elif team == True:
             if user in team_list: team_list.remove(user)
-            
+
             # Checks to see if there are enough or too many members in team
             try:
                 print ('Trying')
                 if 1 <= len(team_list) < 5:
-                    
+
                     for team_mem in team_list:
 
-                        
+
                         print ('Messaging team member...')
                         self.r.send_message(team_mem, 'Registered for /r/Progects hackathon', \
                                         'You were registered by /u/' + user + ' if you would like to '
-                                        'unregister reply with !unregister.') 
+                                        'unregister reply with !unregister.')
                         print ('Message sent')
                         self.unreg(team_mem)
                         self.registry_cache[team_mem] = ['custom', 'custom', user + "'s_Team"]
                         self.notify_add(team_mem)
 
-                    
+
                     print ('Replying to custom team command...')
                     message.reply('Thank you for registering your team. '
                                     ' A confirmation message will be sent to '
                                     'your team members.')
                     print ('Reply sent')
-                    
-                    
+
+
                     # registers the user
                     self.unreg(user)
                     self.registry_cache[user] = ['custom', 'custom', user + "'s_Team"]
@@ -481,20 +414,20 @@ class Bot():
                                     ' is 2 members and the max is 5')
                     print ('Reply sent')
 
-                        
 
-                                        
+
+
             # Need to fix this exception eventually.
-            
+
             except:
                 print ('User put a fake username. Replying to message...')
                 message.reply('Please use valid usernames for your team mates.')
                 print ('Reply sent')
-                
-            
-            
-        # Registers new user. Checks to see if there are any teams with 
-        # people of similar experience and language. 
+
+
+
+        # Registers new user. Checks to see if there are any teams with
+        # people of similar experience and language.
         elif (language and experience) != False and team == False:
             print ('Replying to new user command...')
             message.reply('Thank you for registering.')
@@ -503,9 +436,9 @@ class Bot():
             self.unreg(user)
             self.registry_cache[user] = [language, experience, self.team(language, experience)]
             print ('Found team, registering user')
-            
+
             self.notify_add(user)
-            
+
 
         else:
             print ('Replying to bad command...')
@@ -514,25 +447,23 @@ class Bot():
                             ' programming language and your experience level(beginner, intermediate, advanced).'
                             ' If there are any other issues, please try the !help command.')
             print ('Reply sent')
-            
-        # Updates registry file             
-        self.write_file(REGISTRY, self.registry_cache)
-                        
-        
+
+        # Updates registry file
+        cache.writefile(REGISTRY, self.registry_cache)
+
     def notify_add(self, user):
         '''
         Updates notification cache
         '''
-        
+
         print("Adding {0} to notifications list.".format(user))
 
         self.notify_cache.add(user)
-        self.write_file(NOTIFY_FILE, self.notify_cache)
+        cache.writefile(NOTIFY_FILE, self.notify_cache)
 
 
         print('{0} added to notifications list.'.format(user))
         pprint (self.registry_cache)
-
 
     def notify(self, user, message_text, message ):
         '''
@@ -542,21 +473,17 @@ class Bot():
         print("!notify command initialized. Adding {0} to notifications list.".format(user))
 
         self.notify_cache.add(user)
-        self.write_file(NOTIFY_FILE, self.notify_cache)
+        cache.writefile(NOTIFY_FILE, self.notify_cache)
 
 
         print('{0} added to notifications list.'.format(user))
-        
+
         print("Replying to {0} .".format(user))
-        
+
         message.reply('You have been added to the notification list')
-        
+
         print ('Reply sent')
-        
-        
-
-
-
+    
     def get_subreddits(self):
         '''
         For each specified subreddit, use get_subreddit to create a
@@ -572,8 +499,45 @@ class Bot():
             subreddits.append(self.r.get_subreddit(sub))
 
         return subreddits
-        
 
+    def event(self, subreddit):
+        '''
+        Searches for dates in events and notifies people of upcoming events
+        '''
+        threadID = None
+        if self.datetime == None:
+            print ('Datetime not set. Searching for datetime')
+            new_thread = subreddit.get_new(limit = 5)
+            for thread in new_thread:
+                title = thread.title
+                dateseconds = schedule.date(title)
+                if dateseconds != False:
+                    self.datetime = dateseconds
+                    print ('Datetime is set')   
+                                    
+                    print ('Notifying users of upcoming event')
+                    for name in self.notify_cache:
+                        self.r.send_message(name, 'A Progect has been posted for /r/Progects!'\
+                                                , 'message')  
+                    print ('Users have been notified')
+                    
+        elif self.datetime != None:
+            print ('Checking time until event...')       
+            message, msg_title = schedule.confirm(self.datetime)
+            if type(message) == str:
+                ('Event will be soon, notifying users')
+                for name in self.notify_cache:
+                    self.r.send_message(name, msg_title, message)
+                ('All users have been notified')
+            elif message == True:
+                print ('The event date has passed. Adding Thread ID to cache...')
+                self.datetime = None
+                ID_cache.add[ThreadID]
+                print ('Thread ID added')
+                
+                
+            
+            
     def runbot(self):
         '''
         Function to run bot.
@@ -581,10 +545,13 @@ class Bot():
 
         # Search each subreddit for comments
         for subreddit in self.subreddits:
-            
+
             self.comment_search(subreddit)
-        
+            self.event(subreddit)
+
         self.message_search()
+        
+
 
         # Used to stop bot for certain amount of time to not
         # overload the server
@@ -593,19 +560,24 @@ class Bot():
 
 
 def main():
-    try:
-        bot = Bot()
+    bot = Bot()
 
-        i = 1
-        while True:
-            
-            print ('Iteration: %d' % i)
-            bot.runbot()
+    i = 1
+    exception = 0
+    while True:
 
-            
-            i += 1
-    except HTTPError:
-        time.sleep(60)
+        print ('Iteration: %d' % i)
+        #try:
+        bot.runbot()
+        exception = 0
+        #except:
+            #exception += 1
+            #time.sleep(60)
+
+        i += 1
+        
+        if exception >= 3:
+            break
 
 
 if __name__ == '__main__':
