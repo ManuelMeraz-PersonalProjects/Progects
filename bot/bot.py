@@ -1,4 +1,4 @@
-import praw, time, cache, configparser, schedule, datetime, traceback
+import praw, time, cache, configparser, schedule, datetime, traceback, mailme
 from pprint import pprint
 
 # configuration file. store name and password here
@@ -585,15 +585,17 @@ def main():
         try:
             bot.runbot()
             exception = 0
+            i += 1
         
         except:
-            timestamp = datetime.date.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+            timestamp = '{:%Y-%m-%d %H:%M:%S}'.format(datetime.datetime.now())
             error_message = traceback.format_exc()
 
-            with open('stringtest.txt', 'a+') as f:
-                f.write('timestamp' + ' - Error:\n' + error_message + '\n\n\n')
-            print('Sleeping....zzzzzz')
-            time.sleep(60)
+            with open('errorlog.txt', 'a+') as f:
+                f.write(timestamp + ' - Error:\n' + error_message + '\n\n\n')
+                
+            print ('Sending email with error attached...')
+
             exception += 1
         
         if exception >= 3:
