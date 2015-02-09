@@ -5,23 +5,25 @@ Our [IRC channel](http://webchat.freenode.net/) will be #Progects @ Freenode
 
 Current Work is being done on the reddit bot in Python 3 with PRAW
 
-Current short term goals:
-  * Read thread titles for upcoming events
-  * Create teams once date is met for thread title
-  
+Current bot pabilities:
+ * Bot name is PROGECTS_BOT1
+ * Can register users as self or teams
+ * If a user wants to join someone else's team, they can if the team is not full (5 Maximum)
+ * Bot will send out reminers to previously registered and currently registered people of new events,
+   24 hours to an event, 1 hour before an event and 10 minutes before the event starts.
+ * The commands available for the bot are:
+      !help - Bot responds with help text explaining the commands
+      !notify - registers users for reminders
+      !register (arguments) - registers users for events/reminders and can register teams
+      !unregister - Removes user from registry and/or reminder notifications
+      !team - Let's you know who's in your team
 
-  
-Eventually:
-  
-  * If error occurs, create log file and email it
-  * Notify users when a new person joins the team
-  * Make use of config file
-  * Create well worded messages and wiki
-  
-  
-Current Bugs:
-  * Does not correctly organize people into teams. Put everyone on Team_1 until it's full
-  then it creates Team_2.
+
+Current short term goals:
+* Create well formatted messages for the bot
+* IRC capabilities
+* Notify users of new team mates
+
   
 
 Goals for /r/Progects! To get the ball rolling, this is what I want to accomplish before actually starting:
