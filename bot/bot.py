@@ -19,6 +19,11 @@ class Bot():
         '''
         Handle various setup functions, including logging into Reddit.
         '''
+        
+        # Open config file for reading
+        self.config = configparser.ConfigParser()
+        self.config.read(CONFIG)
+        
         # List of words bot looks for and their associated commands
         self.commands = {
                         '!register':self.register,
@@ -28,12 +33,11 @@ class Bot():
                           '!notify':self.notify
                           }
 
-        self.languages = ('python', 'c++', 'java', 'javascript', 'ruby',
-                            'c','perl', 'shell')
-        self.experience = ('beginner', 'intermediate', 'advanced')
+        self.languages = [lang for lang in self.config['Languages']]
+        self.experience = [exp for exp in self.config['Experience']]
 
         # Subreddits to search for
-        self.subreddit_list = ['progects', 'test']
+        self.subreddit_list = [sub for sub in self.config['Subreddits']]
 
         # set containing all comments seen so far
         self.ID_cache = cache.cachelist(ID_FILE)
@@ -53,15 +57,10 @@ class Bot():
         self.r = praw.Reddit(user_agent = "Test bot for /r/progects by /u/NEET_Here, /u/triple-take, and /u/prog_quest")
 
         # read in username and password from external config file
-        self.config = configparser.ConfigParser()
-        self.config.read(CONFIG)
-        self.config.sections()
-        self.botname = self.config.get('BotLogin', 'username')
-        self.password = self.config.get('BotLogin', 'password')
+        self.botname = self.config['BotLogin']['username']
+        self.password = self.config['BotLogin']['password']
 
         # create PRAW subreddit objects
-        # did some testing, this only needs to be done once,
-        # that's why its in __init__ now
         self.subreddits = self.get_subreddits()
 
         # login
@@ -576,7 +575,11 @@ class Bot():
 
 def main():
     bot = Bot()
+    email = {}
+    for key in bot.config['Email']:
+        email[key] = bot.config['Email'][key]
 
+    
     i = 1
     exception = 0
     while True:
@@ -595,7 +598,17 @@ def main():
                 f.write(timestamp + ' - Error:\n' + error_message + '\n\n\n')
                 
             print ('Sending email with error attached...')
+            
+            # Access email settings through email dictionary
+            mail = mailme.MailMe(email[e_username], email[e_password])
+            mail.input_address(email[to_addr], email[from_addr])
+            mail.email_content('Bot Error', 'Log attached', ['errorlog.txt'])
+            mail.server(email[smtp], email[port])
+            mail.sendmail()
+            print('Email sent')
 
+            time.sleep(60)
+            print('Sleeping....zzzzzz')
             exception += 1
         
         if exception >= 3:

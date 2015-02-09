@@ -1,3 +1,33 @@
 [BotLogin]
-username = PROGECTS_BOT1
-password = B0tP@ssword
+# Put your username and password for your bot here
+username = 
+password = 
+
+[Email]
+# 
+e_username = 
+e_password = 
+to_addr = 
+from_addr = 
+smtp = 
+port = 
+
+# Put colon at the end to create empty key value. 
+# Using these to store lists
+# Access with [key for key in config[section]]
+
+[Languages]
+python:
+c++:
+java:
+javascript:
+haskell:
+
+[Experience]
+beginner:
+Intermediate:
+advanced:
+
+[Subreddits]
+test:
+progects:

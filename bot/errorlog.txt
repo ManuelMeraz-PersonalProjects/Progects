@@ -23,3 +23,111 @@ requests.exceptions.HTTPError: 503 Server Error: Service Unavailable
 
 
 
+2015-02-09 07:28:44 - Error:
+Traceback (most recent call last):
+  File "bot.py", line 586, in main
+    bot.runbot()
+  File "bot.py", line 564, in runbot
+    self.comment_search(subreddit)
+  File "bot.py", line 148, in comment_search
+    for comment in comment_list:
+  File "/usr/local/lib/python3.4/site-packages/praw/__init__.py", line 504, in get_content
+    page_data = self.request_json(url, params=params)
+  File "/usr/local/lib/python3.4/site-packages/praw/decorators.py", line 163, in wrapped
+    return_value = function(reddit_session, *args, **kwargs)
+  File "/usr/local/lib/python3.4/site-packages/praw/__init__.py", line 557, in request_json
+    retry_on_error=retry_on_error)
+  File "/usr/local/lib/python3.4/site-packages/praw/__init__.py", line 399, in _request
+    _raise_response_exceptions(response)
+  File "/usr/local/lib/python3.4/site-packages/praw/internal.py", line 178, in _raise_response_exceptions
+    response.raise_for_status()
+  File "/usr/local/lib/python3.4/site-packages/requests/models.py", line 831, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 522 Server Error: Origin Connection Time-out
+
+
+
+2015-02-09 07:30:46 - Error:
+Traceback (most recent call last):
+  File "bot.py", line 586, in main
+    bot.runbot()
+  File "bot.py", line 564, in runbot
+    self.comment_search(subreddit)
+  File "bot.py", line 148, in comment_search
+    for comment in comment_list:
+  File "/usr/local/lib/python3.4/site-packages/praw/__init__.py", line 504, in get_content
+    page_data = self.request_json(url, params=params)
+  File "/usr/local/lib/python3.4/site-packages/praw/decorators.py", line 163, in wrapped
+    return_value = function(reddit_session, *args, **kwargs)
+  File "/usr/local/lib/python3.4/site-packages/praw/__init__.py", line 557, in request_json
+    retry_on_error=retry_on_error)
+  File "/usr/local/lib/python3.4/site-packages/praw/__init__.py", line 399, in _request
+    _raise_response_exceptions(response)
+  File "/usr/local/lib/python3.4/site-packages/praw/internal.py", line 178, in _raise_response_exceptions
+    response.raise_for_status()
+  File "/usr/local/lib/python3.4/site-packages/requests/models.py", line 831, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 522 Server Error: Origin Connection Time-out
+
+
+
+2015-02-09 07:32:04 - Error:
+Traceback (most recent call last):
+  File "bot.py", line 586, in main
+    bot.runbot()
+  File "bot.py", line 564, in runbot
+    self.comment_search(subreddit)
+  File "bot.py", line 148, in comment_search
+    for comment in comment_list:
+  File "/usr/local/lib/python3.4/site-packages/praw/__init__.py", line 504, in get_content
+    page_data = self.request_json(url, params=params)
+  File "/usr/local/lib/python3.4/site-packages/praw/decorators.py", line 163, in wrapped
+    return_value = function(reddit_session, *args, **kwargs)
+  File "/usr/local/lib/python3.4/site-packages/praw/__init__.py", line 557, in request_json
+    retry_on_error=retry_on_error)
+  File "/usr/local/lib/python3.4/site-packages/praw/__init__.py", line 399, in _request
+    _raise_response_exceptions(response)
+  File "/usr/local/lib/python3.4/site-packages/praw/internal.py", line 178, in _raise_response_exceptions
+    response.raise_for_status()
+  File "/usr/local/lib/python3.4/site-packages/requests/models.py", line 831, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 522 Server Error: Origin Connection Time-out
+
+
+
+2015-02-09 11:20:10 - Error:
+Traceback (most recent call last):
+  File "bot.py", line 589, in main
+    bot.runbot()
+  File "bot.py", line 573, in runbot
+    time.sleep(30)
+KeyboardInterrupt
+
+
+
+2015-02-09 11:21:16 - Error:
+Traceback (most recent call last):
+  File "bot.py", line 593, in main
+    bot.runbot()
+  File "bot.py", line 566, in runbot
+    self.comment_search(subreddit)
+  File "bot.py", line 150, in comment_search
+    for comment in comment_list:
+  File "/usr/local/lib/python3.4/site-packages/praw/__init__.py", line 504, in get_content
+    page_data = self.request_json(url, params=params)
+  File "/usr/local/lib/python3.4/site-packages/praw/decorators.py", line 163, in wrapped
+    return_value = function(reddit_session, *args, **kwargs)
+  File "/usr/local/lib/python3.4/site-packages/praw/__init__.py", line 557, in request_json
+    retry_on_error=retry_on_error)
+  File "/usr/local/lib/python3.4/site-packages/praw/__init__.py", line 398, in _request
+    response = handle_redirect()
+  File "/usr/local/lib/python3.4/site-packages/praw/__init__.py", line 371, in handle_redirect
+    timeout=timeout, **kwargs)
+  File "/usr/local/lib/python3.4/site-packages/praw/handlers.py", line 145, in wrapped
+    result = function(cls, **kwargs)
+  File "/usr/local/lib/python3.4/site-packages/praw/handlers.py", line 53, in wrapped
+    time.sleep(delay)
+KeyboardInterrupt
+
+
+
