@@ -346,7 +346,7 @@ class Bot():
 
         # Registers person to the same team as a friend
         if (language and experience) != False and team == False and same_team == True:
-            if type(check_registry(registry_cache[friend][2])) == str:
+            if type(self.check_registry(self.registry_cache[friend][2])) == str:
 
                 print ('Replying to same team command...')
                 message.reply('Thank you for registering. You will be on'
@@ -589,6 +589,8 @@ def main():
             bot.runbot()
             exception = 0
             i += 1
+        except KeyboardInterrupt:
+            raise
         
         except:
             timestamp = '{:%Y-%m-%d %H:%M:%S}'.format(datetime.datetime.now())
@@ -600,10 +602,10 @@ def main():
             print ('Sending email with error attached...')
             
             # Access email settings through email dictionary
-            mail = mailme.MailMe(email[e_username], email[e_password])
-            mail.input_address(email[to_addr], email[from_addr])
+            mail = mailme.MailMe(email['e_username'], email['e_password'])
+            mail.input_address(email['to_addr'], email['from_addr'])
             mail.email_content('Bot Error', 'Log attached', ['errorlog.txt'])
-            mail.server(email[smtp], email[port])
+            mail.server(email['smtp'], email['port'])
             mail.sendmail()
             print('Email sent')
 

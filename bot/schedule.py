@@ -9,7 +9,7 @@ def date(string):
     '''
     Extracts date from title of thread and returns date in seconds
     '''
-    if 'progect ' and '@' in string:
+    if 'progect' and '@' in string:
         date = re.findall(r'\w+,\s\w+\s\d{1,2},\s\d{4}\s@\s\d{1,2}:\d{2}\s\w+', string, re.I)
         if len(date) == 1:
             date = date[0].replace(',', '').replace('@','')

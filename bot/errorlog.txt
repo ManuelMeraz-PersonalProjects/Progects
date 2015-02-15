@@ -131,3 +131,87 @@ KeyboardInterrupt
 
 
 
+2015-02-13 19:20:05 - Error:
+Traceback (most recent call last):
+  File "bot.py", line 589, in main
+    bot.runbot()
+  File "bot.py", line 564, in runbot
+    self.event(subreddit)
+  File "bot.py", line 514, in event
+    print ('Datetime not set. Searching for datetime in subreddit {0}'.format(subreddit))
+OSError: [Errno 5] Input/output error
+
+
+
+2015-02-14 19:20:59 - Error:
+Traceback (most recent call last):
+  File "bot.py", line 589, in main
+    bot.runbot()
+  File "bot.py", line 566, in runbot
+    self.message_search()
+  File "bot.py", line 135, in message_search
+    self.commands[command](user, msg_text, msg)
+  File "bot.py", line 349, in register
+    if type(check_registry(registry_cache[friend][2])) == str:
+NameError: name 'check_registry' is not defined
+
+
+
+2015-02-14 19:22:40 - Error:
+Traceback (most recent call last):
+  File "bot.py", line 589, in main
+    bot.runbot()
+  File "bot.py", line 566, in runbot
+    self.message_search()
+  File "bot.py", line 135, in message_search
+    self.commands[command](user, msg_text, msg)
+  File "bot.py", line 349, in register
+    if type(check_registry(registry_cache[friend][2])) == str:
+NameError: name 'check_registry' is not defined
+
+
+
+2015-02-14 19:23:50 - Error:
+Traceback (most recent call last):
+  File "bot.py", line 589, in main
+    bot.runbot()
+  File "bot.py", line 566, in runbot
+    self.message_search()
+  File "bot.py", line 135, in message_search
+    self.commands[command](user, msg_text, msg)
+  File "bot.py", line 349, in register
+    if type(check_registry(registry_cache[friend][2])) == str:
+NameError: name 'check_registry' is not defined
+
+
+
+2015-02-14 19:30:19 - Error:
+Traceback (most recent call last):
+  File "bot.py", line 589, in main
+    bot.runbot()
+  File "bot.py", line 573, in runbot
+    time.sleep(30)
+KeyboardInterrupt
+
+
+
+2015-02-15 06:41:34 - Error:
+Traceback (most recent call last):
+  File "bot.py", line 589, in main
+    try:
+  File "bot.py", line 573, in runbot
+    print ('Iteration complete')
+KeyboardInterrupt
+
+
+
+2015-02-15 06:45:14 - Error:
+Traceback (most recent call last):
+  File "bot.py", line 590, in main
+    try:
+  File "bot.py", line 574, in runbot
+    print ('Iteration complete')
+KeyboardInterrupt
+
+
+

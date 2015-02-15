@@ -1,16 +1,16 @@
 [BotLogin]
 # Put your username and password for your bot here
-username = 
-password = 
+username = progects_bot1
+password = B0tP@ssword
 
 [Email]
 # 
-e_username = 
-e_password = 
-to_addr = 
-from_addr = 
-smtp = 
-port = 
+e_username = meraz.manuel
+e_password = 329448MAme44$$
+to_addr = meraz.manuel@gmail.com
+from_addr = meraz.manuel@gmail.com
+smtp = smtp.gmail.com
+port = 587
 
 # Put colon at the end to create empty key value. 
 # Using these to store lists
@@ -22,6 +22,7 @@ c++:
 java:
 javascript:
 haskell:
+ruby:
 
 [Experience]
 beginner:
